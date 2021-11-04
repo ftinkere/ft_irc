@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <string>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,31 +14,32 @@
 #include <sys/fcntl.h>
 #include <sys/poll.h>
 #include <vector>
+#include <sndfile.hh>
+#include <sstream>
 
 int main() {
 
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_fd < 0) {
 		std::cerr << "Can't open socket" << std::endl;
-		return EXIT_FAILURE;
+		return 1;
 	}
 
 	struct sockaddr_in stSockAddr = {0};
 	stSockAddr.sin_family = PF_INET;
 	stSockAddr.sin_port = htons(6664);
 	stSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	stSockAddr.sin_len = sizeof(struct sockaddr_in);
 
 	if (bind(socket_fd, (struct sockaddr *) &stSockAddr, sizeof(stSockAddr)) < 0) {
 		std::cerr << "Can't bind socket" << std::endl;
 		close(socket_fd);
-		return EXIT_FAILURE;
+		return 1;
 	}
 
 	if (listen(socket_fd, 128) < 0) {
 		std::cerr << "Can't listen socket" << std::endl;
 		close(socket_fd);
-		return EXIT_FAILURE;
+		return 1;
 	}
 
 	fcntl(socket_fd, F_SETFL, O_NONBLOCK);
@@ -80,15 +82,15 @@ int main() {
 						break;
 					} else if (pollfds.size() == 1) {
 						std::cout << "[" << i << " to " << i << "]: " << text;
-						std::string tmp;
-						tmp += "[" + std::to_string(i) + "]: " + text;
-						send(pollfds[i].fd, (const void*) tmp.data(), tmp.size(), 0);
+						std::stringstream tmp;
+						tmp << "[" << i << "]: " << text;
+						send(pollfds[i].fd, (const void*) tmp.str().data(), tmp.str().size(), 0);
 					} else if (pollfds.size() > 1) {
 						int fd = i + 1 == pollfds.size() ? 0 : i + 1;
 						std::cout << "[" << i << " to " << fd << "]: " << text;
-						std::string tmp;
-						tmp += "[" + std::to_string(i) + "]: " + text;
-						send(pollfds[fd].fd, (const void*) tmp.data(), tmp.size(), 0);
+						std::stringstream tmp;
+						tmp << "[" << i << "]: " << text;
+						send(pollfds[fd].fd, (const void*) tmp.str().data(), tmp.str().size(), 0);
 					}
 
 					text.clear();

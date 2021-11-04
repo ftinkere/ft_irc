@@ -24,7 +24,7 @@ int main() {
 
 	struct sockaddr_in stSockAddr = {0};
 	stSockAddr.sin_family = PF_INET;
-	stSockAddr.sin_port = htons(6665);
+	stSockAddr.sin_port = htons(6664);
 	stSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	stSockAddr.sin_len = sizeof(struct sockaddr_in);
 
@@ -71,16 +71,26 @@ int main() {
 						if (text.find('\n') != std::string::npos)
 							break;
 					}
-					std::cout << "[RECV " << i << "]: " << text;
 					if (text == "exit\n") {
 						shutdown(pollfds[i].fd, SHUT_RDWR);
 						close (pollfds[i].fd);
 						pollfds.erase(pollfds.begin() + i);
-					}
-					if (text == "sexit\n") {
+					} else if (text == "sexit\n") {
 						work = false;
 						break;
+					} else if (pollfds.size() == 1) {
+						std::cout << "[" << i << " to " << i << "]: " << text;
+						std::string tmp;
+						tmp += "[" + std::to_string(i) + "]: " + text;
+						send(pollfds[i].fd, (const void*) tmp.data(), tmp.size(), 0);
+					} else if (pollfds.size() > 1) {
+						int fd = i + 1 == pollfds.size() ? 0 : i + 1;
+						std::cout << "[" << i << " to " << fd << "]: " << text;
+						std::string tmp;
+						tmp += "[" + std::to_string(i) + "]: " + text;
+						send(pollfds[fd].fd, (const void*) tmp.data(), tmp.size(), 0);
 					}
+
 					text.clear();
 				}
 				pollfds[i].revents = 0;

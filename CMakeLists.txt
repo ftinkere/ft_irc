@@ -3,5 +3,5 @@ project(ft_irc)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(ft_irc srcs/main.cpp)
+add_executable(ft_irc srcs/main.cpp srcs/ListeningSocket.cpp srcs/ListeningSocket.hpp srcs/Socket.cpp srcs/Socket.hpp srcs/SUBD.cpp)
 add_executable(experimental srcs/experimental.cpp)

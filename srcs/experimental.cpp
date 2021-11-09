@@ -14,7 +14,6 @@
 #include <sys/fcntl.h>
 #include <sys/poll.h>
 #include <vector>
-#include <sndfile.hh>
 #include <sstream>
 
 int main() {

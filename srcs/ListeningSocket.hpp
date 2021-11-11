@@ -6,7 +6,7 @@
 #include "Socket.hpp"
 #include "Client.hpp"
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 513
 
 namespace IRC {
     class ListenSocket : public Socket

@@ -1,5 +1,6 @@
 #include <fstream>
 #include "ListeningSocket.hpp"
+#include "Command.hpp"
 
 namespace IRC{
 
@@ -101,7 +102,7 @@ namespace IRC{
     {
 		char buf[BUFFER_SIZE];
         int nbytes;
-        if ((nbytes = recv(i, buf, sizeof buf, 0)) <= 0)
+        if ((nbytes = recv(i, buf, sizeof buf - 1, 0)) <= 0)
         {// получена ошибка или соединение закрыто клиентом
             if (nbytes == 0) {
                 // соединение закрыто
@@ -117,8 +118,9 @@ namespace IRC{
         else
         {// у нас есть какие-то данные от клиента
 			// если fd нет, UB
+			buf[nbytes] = '\0';
 			Client* client = std::find_if(clients.begin(), clients.end(), is_fd(i)).base();
-
+			Command cmd(buf);
             if (handle_message(buf, client) == 1){
                 for(int j = 0; j <= fd_max; j++) {
                     // отсылаем данные всем!

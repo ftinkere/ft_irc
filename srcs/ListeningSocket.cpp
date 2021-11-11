@@ -6,7 +6,7 @@ namespace IRC{
 //        std::cout<<fd_max << std::endl;
 //        this->fd_max = Socket::fd_max;
 //        this->master = Socket::master;
-        base = new SUBD();
+//        base = new SUBD();
         while(1) {
             read_fds = master; // копируем его
             if (select(fd_max + 1, &read_fds, NULL, NULL, NULL) == -1) {
@@ -28,18 +28,20 @@ namespace IRC{
 
     void ListenSocket::new_client()
     {
-        socklen_t addrlen;
+		char *ipv4;
+		socklen_t addrlen;
         struct sockaddr_storage remoteaddr;
 
         addrlen = sizeof remoteaddr;
-        fd_new = accept(    listener,
+        int fd_new = accept(listener,
                             (struct sockaddr *)&remoteaddr,
-                                    &addrlen);
+                            &addrlen);
         if (fd_new == -1) {
             std::cerr << "Error Accept" << std::endl;
         }
         else
         {
+//			std::cout << "Debug" << std::endl;
             FD_SET(fd_new, &master); // добавляем в мастер-сет
             if (fd_new > fd_max) {    // продолжаем отслеживать самый большой номер дескиптора
                 fd_max = fd_new;
@@ -50,20 +52,23 @@ namespace IRC{
                         <<  " on socket "
                         <<  fd_new
                         <<  std::endl;
-            base->cl.ipv4 = ipv4;
-            base->cl.fds = fd_new;
-            base->cl.nick = "";
-            base->cl.password = "";
-            base->cl.user = "";
-            base->val = std::make_pair(fd_new, base->cl);
-            base->base_fd.insert(base->val);
-            base->base_fd[4].fds = 45;
+            this->clients.push_back(Client(fd_new));
+
+//			base->cl.ipv4 = ipv4;
+//            base->cl.fds = fd_new;
+//            base->cl.nick = "";
+//            base->cl.password = "";
+//            base->cl.user = "";
+//            base->val = std::make_pair(fd_new, base->cl);
+//            base->base_fd.insert(base->val);
+//            base->base_fd[4].fds = 45;
 //            base->base_nick.insert(base->val);
         }
     }
 
     void ListenSocket::handle_chat(int &i)
     {
+		char buf[BUFFER_SIZE];
         int nbytes;
         if ((nbytes = recv(i, buf, sizeof buf, 0)) <= 0)
         {// получена ошибка или соединение закрыто клиентом
@@ -80,7 +85,10 @@ namespace IRC{
         }
         else
         {// у нас есть какие-то данные от клиента
-            if (base->handle_message(buf) == 1){
+			// если fd нет, UB
+			Client* client = std::find_if(clients.begin(), clients.end(), is_fd(i)).base();
+
+            if (handle_message(buf, client) == 1){
                 for(int j = 0; j <= fd_max; j++) {
                     // отсылаем данные всем!
                     if (FD_ISSET(j, &master))
@@ -98,7 +106,21 @@ namespace IRC{
         }
     }
 
-    void ListenSocket::check_connections() {
+	int ListenSocket::handle_message(const char *buf, Client *client) {
+		if (client->getNick().empty()) {
+			client->setNick(buf);
+		} else {
+			Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(buf)).base();
+			if (to != clients.end().base()) {
+				if (send(to->getFd(), "ping\n", 5, 0) < 0) {
+					std::cerr << "Error send" << std::endl;
+				}
+			}
+		}
+		return 1;
+	}
+
+	void ListenSocket::check_connections() {
         socklen_t addrlen;
         struct sockaddr_storage remoteaddr;
 
@@ -131,7 +153,7 @@ namespace IRC{
 
     ListenSocket::~ListenSocket()
     {
-        delete base;
+//        delete base;
     }
 }
 //}

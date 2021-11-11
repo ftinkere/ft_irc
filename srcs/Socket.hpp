@@ -12,17 +12,6 @@
 #include <netdb.h>
 #include <iostream>
 
-#define PASS "PASS"
-#define NICK "NICK"
-#define USER "USER"
-#define DOTS ":"
-#define OPER "OPER"
-#define QUIT "QUIT"
-#define LEN_NICK 9
-#define PRIVMSG "PRIVMSG"
-#define AWAY "AWAY"
-#define NOTICE "NOTICE"
-
 namespace IRC
 {
     class Socket

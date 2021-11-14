@@ -1,22 +1,53 @@
+#include <fstream>
 #include "ListeningSocket.hpp"
 
 namespace IRC{
-    ListenSocket::ListenSocket(const char* port) : Socket(port)
-    {
+
+	std::map<std::string, std::string> get_config(std::string filepath)
+	{
+		std::string buf;
+		std::ifstream conf(filepath);
+		std::map<std::string, std::string> confs;
+
+
+		while (!conf.eof())
+		{
+			std::getline(conf, buf);
+			std::size_t pos = buf.find('=');
+			if (pos != std::string::npos)
+			{
+				std::string s1 = buf.substr(0, pos);
+				std::string s2 = buf.substr(pos + 1);
+				confs.insert(std::pair<std::string, std::string>(s1, s2));
+			}
+		}
+		return (confs);
+	}
+
+    ListenSocket::ListenSocket(const char* port) : Socket(port) {}
+
+	void ListenSocket::execute() {
 //        std::cout<<fd_max << std::endl;
 //        this->fd_max = Socket::fd_max;
 //        this->master = Socket::master;
 //        base = new SUBD();
-        while(1) {
-            read_fds = master; // копируем его
-            if (select(fd_max + 1, &read_fds, NULL, NULL, NULL) == -1) {
-                throw std::runtime_error("Select error");
-            }
-            check_connections();
-        }
-    }
+		while(1) {
+			read_fds = master; // копируем его
+			if (select(fd_max + 1, &read_fds, NULL, NULL, NULL) == -1) {
+				throw std::runtime_error("Select error");
+			}
+			check_connections();
+		}
+	}
 
-    char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)
+	void ListenSocket::configure(const std::string &path) {
+		std::map<std::string, std::string> configs = get_config(path);
+		if (configs.find("servername") != configs.end()) {
+			this->servername = configs["servername"];
+		}
+	}
+
+	char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)
     {
         return (inet_ntoa(get_in_addr((struct sockaddr*)&remoteaddr)));
     }

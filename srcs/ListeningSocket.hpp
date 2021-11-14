@@ -15,9 +15,13 @@ namespace IRC {
         ListenSocket( const char* port);
         ~ListenSocket();
 
+		void execute();
+		void configure(std::string const& path);
+
     private:
 		std::vector<Client> clients;
 		fd_set read_fds;
+		std::string servername;
 //        fd_set master;
 //        int fd_max;
 //        int fd_new;

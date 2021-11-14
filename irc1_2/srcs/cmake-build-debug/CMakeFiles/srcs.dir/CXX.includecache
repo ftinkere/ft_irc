@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/latkins/Desktop/srcs/Client.hpp
+string
+-
+vector
+-
+
+/Users/latkins/Desktop/srcs/Parser.cpp
+Parser.hpp
+/Users/latkins/Desktop/srcs/Parser.hpp
+
+/Users/latkins/Desktop/srcs/Parser.hpp
+Client.hpp
+/Users/latkins/Desktop/srcs/Client.hpp
+regex.h
+-
+iostream
+-
+

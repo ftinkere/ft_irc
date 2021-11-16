@@ -12,8 +12,9 @@ namespace IRC {
 		std::vector<std::string> const& params = cmd.getParams();
 		if (params.empty()) {
 			// reply not args
+		} else {
+			client.pass = cmd.getParams()[0];
 		}
-		client.pass = cmd.getParams()[0];
 	}
 
 	void cmd_nick(Command const& cmd, Client& client, ListenSocket& server) {

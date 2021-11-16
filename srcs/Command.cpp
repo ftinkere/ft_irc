@@ -3,6 +3,9 @@
 //
 
 #include <iostream>
+#include <Client.hpp>
+#include <ListenSocket.hpp>
+#include "Parser.hpp"
 #include "Command.hpp"
 
 IRC::Command::Command(std::string const& message): valid(true) {
@@ -54,10 +57,12 @@ IRC::Command::Command(std::string const& message): valid(true) {
 		std::string::size_type space_pos;
 		while ((space_pos = message.find_first_of(' ', pos)) != std::string::npos
 				&& message[pos] != ':') {
-			params.push_back(message.substr(pos, space_pos - pos));
+			if (space_pos != pos) {
+				params.push_back(message.substr(pos, space_pos - pos));
+			}
 			pos = space_pos + 1;
 		}
-		if (pos < message.length() && message[pos] != 'n' && message[pos] != '\r') {
+		if (pos < message.length() && message[pos] != '\n' && message[pos] != '\r') {
 			std::string::size_type offset = 0;
 			if (message[message.length() - 1] == '\n')
 				++offset;
@@ -70,12 +75,18 @@ IRC::Command::Command(std::string const& message): valid(true) {
 	}
 
 	std::cout << "\t params: [";
-	for (int i = 0; i < params.size() - 1; ++i) {
+	for (int i = 0; !params.empty() && i < params.size() - 1; ++i) {
 		std::cout << " " << params[i];
 	}
-	std::cout << " \"" << params[params.size() - 1] << "\" ]" << std::endl;
-	std::cout << "[DEBUG]: original message: " << message << std::endl;
+	if (!params.empty()) {
+		std::cout << " \"" << params[params.size() - 1] << "\"";
+	}
+	std::cout << " ]" << std::endl;
+//	std::cout << "[DEBUG]: original message: " << message << std::endl;
 }
+
+IRC::Command::Command(const std::string &prefix, const std::string &command, const std::vector<std::string> &params)
+		: prefix(prefix), command(command), params(params), valid(true) {}
 
 IRC::Command::~Command() {}
 
@@ -83,3 +94,41 @@ const std::string &IRC::Command::getPrefix() const { return prefix; }
 const std::string &IRC::Command::getCommand() const { return command; }
 const std::vector<std::string> &IRC::Command::getParams() const { return params; }
 bool IRC::Command::isValid() const { return valid; }
+
+
+
+void IRC::Command::exec(Client & client, ListenSocket & server) const {
+	std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
+	if (commands.find(command) == commands.end()) {
+		// reply command not found
+		return ;
+	} else {
+		commands.find(command)->second(*this, client, server);
+	}
+}
+
+void IRC::Command::send_to(IRC::Client const& client, IRC::ListenSocket const& server) const {
+	std::string message;
+
+	message += ":" + server.getServername() + " " + command;
+	for (int i = 0; i < params.size(); ++i) {
+		if (i == params.size() - 1) {
+			message += " :" + params[i] + "\r\n";
+		} else {
+			message += " " + params[i];
+		}
+	}
+	if (params.empty()) {
+		message += "\r\n";
+	}
+	send(client.getFd(), message.c_str(), message.size(), 0);
+}
+
+void IRC::Command::send_to(const std::string &nick, IRC::ListenSocket const& server) const {
+	std::vector<const Client>::iterator to = std::find_if(server.getClients().begin(), server.getClients().end(), is_nickname(nick));
+	if (to == server.getClients().end()) {
+		// reply nick not found
+	} else {
+		send_to(*to, server);
+	}
+}

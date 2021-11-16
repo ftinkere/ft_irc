@@ -16,11 +16,16 @@ namespace IRC {
 
 	class Client {
 	private:
-		std::string nick;
-		std::string user;
+//		std::string pass;
+//		std::string nick;
+//		std::string user;
 		int fd;
 		int flags;
+
 	public:
+		std::string pass;
+		std::string nick;
+		std::string user;
 
 		Client(int fd) : fd(fd), flags(0) {}
 
@@ -28,34 +33,14 @@ namespace IRC {
 
 		// 0b00000001 // flags
 		// 0b00000010 // flag
-		void setFlag(int flag) {
-			flags = flags | flag;
-		}
-
+		void setFlag(int flag) { flags = flags | flag; }
 		// if (getFlags() & UMODE_REGISTERED)
-		int getFlags() const {
-			return flags;
-		}
-
-		const std::string &getNick() const {
-			return nick;
-		}
-
-		void setNick(const std::string &nick) {
-			Client::nick = nick;
-		}
-
-		const std::string &getUser() const {
-			return user;
-		}
-
-		void setUser(const std::string &user) {
-			Client::user = user;
-		}
-
-		int getFd() const {
-			return fd;
-		}
+		int getFlags() const { return flags; }
+		const std::string &getNick() const { return nick; }
+		void setNick(const std::string &nick) { Client::nick = nick; }
+		const std::string &getUser() const { return user; }
+		void setUser(const std::string &user) { Client::user = user; }
+		int getFd() const { return fd; }
 	};
 
 	struct is_nickname_s {
@@ -63,7 +48,7 @@ namespace IRC {
 
 		explicit is_nickname_s(std::string nickname) : nickname(nickname) {};
 
-		bool operator()(Client &c) const { return nickname == c.getNick(); }
+		bool operator()(Client const& c) const { return nickname == c.getNick(); }
 	};
 
 	struct is_fd_s {
@@ -71,7 +56,7 @@ namespace IRC {
 
 		explicit is_fd_s(int fd) : fd(fd) {};
 
-		bool operator()(Client &c) const { return fd == c.getFd(); }
+		bool operator()(Client const& c) const { return fd == c.getFd(); }
 	};
 
 	// find_if(.., .., is_nickname("nick"));

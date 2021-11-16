@@ -1,6 +1,8 @@
 #include <fstream>
-#include "ListeningSocket.hpp"
+#include <Parser.hpp>
+#include "ListenSocket.hpp"
 #include "Command.hpp"
+#include "commands.hpp"
 
 namespace IRC{
 
@@ -25,7 +27,11 @@ namespace IRC{
 		return (confs);
 	}
 
-    ListenSocket::ListenSocket(const char* port) : Socket(port) {}
+	ListenSocket::ListenSocket(const char* port) : Socket(port), servername(""), password("") {
+		commands[CMD_PASS] = &cmd_pass;
+		commands[CMD_NICK] = &cmd_pass;
+		commands[CMD_USER] = &cmd_pass;
+	}
 
 	void ListenSocket::execute() {
 //        std::cout<<fd_max << std::endl;
@@ -41,11 +47,17 @@ namespace IRC{
 		}
 	}
 
-	void ListenSocket::configure(const std::string &path) {
+	void ListenSocket::configure(std::string const& path) {
 		std::map<std::string, std::string> configs = get_config(path);
 		if (configs.find("servername") != configs.end()) {
 			this->servername = configs["servername"];
+		} else {
+			char name [1024];
+			name[1023] = '\0';
+			gethostname(name, 1023);
+			this->servername = name;
 		}
+		std::cout << "[DEBUG]: servername set to " << this->servername << std::endl;
 	}
 
 	char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)
@@ -121,6 +133,7 @@ namespace IRC{
 			buf[nbytes] = '\0';
 			Client* client = std::find_if(clients.begin(), clients.end(), is_fd(i)).base();
 			Command cmd(buf);
+			cmd.send_to(*client, *this);
             if (handle_message(buf, client) == 1){
                 for(int j = 0; j <= fd_max; j++) {
                     // отсылаем данные всем!
@@ -130,7 +143,7 @@ namespace IRC{
                         {
                             if (send(j, buf, nbytes, 0) == -1)
                             {
-                                std::cerr << "Error send" << std::endl;
+                                std::cerr << "Error send_to" << std::endl;
                             }
                         }
                     }
@@ -146,7 +159,7 @@ namespace IRC{
 			Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(buf)).base();
 			if (to != clients.end().base()) {
 				if (send(to->getFd(), "ping\n", 5, 0) < 0) {
-					std::cerr << "Error send" << std::endl;
+					std::cerr << "Error send_to" << std::endl;
 				}
 			}
 		}
@@ -188,5 +201,15 @@ namespace IRC{
     {
 //        delete base;
     }
+
+	void ListenSocket::set_password(const std::string &password) {
+		this->password = password;
+	}
+
+	const std::vector<Client> &ListenSocket::getClients() const { return clients; }
+	const fd_set &ListenSocket::getReadFds() const { return read_fds; }
+	const std::string &ListenSocket::getServername() const { return servername; }
+	const std::string &ListenSocket::getPassword() const { return password; }
+	const std::map<std::string, ListenSocket::cmd> &ListenSocket::getCommands() const { return commands; }
 }
 //}

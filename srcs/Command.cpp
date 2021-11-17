@@ -115,9 +115,10 @@ void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 	if (commands.find(command) == commands.end()) {
 		// reply command not found 421
-		// if registered
+		// if not registered - ignore
 		return ;
 	} else {
+		// if not registered - not registered 451 (except pass, nick, user)
 		commands.find(command)->second(*this, client, server);
 	}
 }

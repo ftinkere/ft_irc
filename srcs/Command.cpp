@@ -8,6 +8,11 @@
 #include "Parser.hpp"
 #include "Command.hpp"
 
+char to_upper(char& c) {
+	c = (char)std::toupper((int)c);
+	return c;
+}
+
 IRC::Command::Command(std::string const& message): valid(true) {
 	if (message.empty() || message[0] == '\n' || message[0] == '\r') {
 		valid = false;
@@ -16,18 +21,25 @@ IRC::Command::Command(std::string const& message): valid(true) {
 
 	std::string::size_type pos = 0;
 
+	while (message[pos] == ' ') {
+		++pos;
+	}
+
 	// Парсим prefix
-	if (message[0] == ':') {
-		std::string::size_type space_pos = message.find_first_of(' ');
+	if (message[pos] == ':') {
+		std::string::size_type space_pos = message.find_first_of(' ', pos);
 		if (space_pos == std::string::npos) {
 			valid = false;
 			return;
 		}
-		prefix = message.substr(1, space_pos);
+		prefix = message.substr(pos + 1, space_pos - pos - 1);
 		pos = space_pos + 1;
 	}
 
 	{
+		while (message[pos] == ' ') {
+			++pos;
+		}
 		std::string::size_type command_end = message.find_first_of(' ', pos);
 
 		if (command_end == std::string::npos) {
@@ -46,6 +58,8 @@ IRC::Command::Command(std::string const& message): valid(true) {
 			}
 		}
 		command = message.substr(pos, command_end - pos);
+		std::string buf;
+		std::transform(command.begin(), command.end(), std::back_inserter(buf), &to_upper);
 		pos = command_end + 1;
 	}
 
@@ -100,7 +114,8 @@ bool IRC::Command::isValid() const { return valid; }
 void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 	if (commands.find(command) == commands.end()) {
-		// reply command not found
+		// reply command not found 421
+		// if registered
 		return ;
 	} else {
 		commands.find(command)->second(*this, client, server);

@@ -29,8 +29,8 @@ namespace IRC{
 
 	ListenSocket::ListenSocket(const char* port) : Socket(port), servername(""), password("") {
 		commands[CMD_PASS] = &cmd_pass;
-		commands[CMD_NICK] = &cmd_pass;
-		commands[CMD_USER] = &cmd_pass;
+		commands[CMD_NICK] = &cmd_nick;
+		commands[CMD_USER] = &cmd_user;
 	}
 
 	void ListenSocket::execute() {
@@ -40,7 +40,11 @@ namespace IRC{
 //        base = new SUBD();
 		while(1) {
 			read_fds = master; // копируем его
-			if (select(fd_max + 1, &read_fds, NULL, NULL, NULL) == -1) {
+			struct timeval timeout = {
+					.tv_sec = 1,
+					.tv_usec = 0
+			};
+			if (select(fd_max + 1, &read_fds, NULL, NULL, &timeout) == -1) {
 				throw std::runtime_error("Select error");
 			}
 			check_connections();
@@ -98,6 +102,23 @@ namespace IRC{
                         <<  std::endl;
             this->clients.push_back(Client(fd_new));
 
+			struct sockaddr_in sa;
+			inet_pton(AF_INET, ipv4, &sa.sin_addr); // check
+			sa.sin_family = AF_INET;
+
+			char node[NI_MAXHOST];
+			memset(node,0, NI_MAXHOST);
+			int res = getnameinfo(reinterpret_cast<const sockaddr *>(&sa), sizeof(sa), node, sizeof(node), NULL, 0, 0);
+			// TODO: errs
+//			std::cout << "[DEBUG]: " << node << std::endl;
+
+			if (res == 0) {
+				this->clients.back().host = node;
+			} else {
+				this->clients.back().host = ipv4;
+			}
+			this->clients.back().login_time = time(NULL);
+
 //			base->cl.ipv4 = ipv4;
 //            base->cl.fds = fd_new;
 //            base->cl.nick = "";
@@ -110,7 +131,7 @@ namespace IRC{
         }
     }
 
-    void ListenSocket::handle_chat(int &i)
+    void ListenSocket::handle_chat(int const& i)
     {
 		char buf[BUFFER_SIZE];
         int nbytes;
@@ -124,8 +145,10 @@ namespace IRC{
             {
                 std::cerr << "Error recieve" << std::endl;
             }
-            close(i); // bye!
-            FD_CLR(i, &master); // удаляем из мастер-сета
+//			clients.erase(std::find_if(clients.begin(), clients.end(), is_fd(i)));
+//            close(i); // bye!
+//            FD_CLR(i, &master); // удаляем из мастер-сета
+			quit_client(i);
         }
         else
         {// у нас есть какие-то данные от клиента
@@ -133,22 +156,23 @@ namespace IRC{
 			buf[nbytes] = '\0';
 			Client* client = std::find_if(clients.begin(), clients.end(), is_fd(i)).base();
 			Command cmd(buf);
-			cmd.send_to(*client, *this);
-            if (handle_message(buf, client) == 1){
-                for(int j = 0; j <= fd_max; j++) {
-                    // отсылаем данные всем!
-                    if (FD_ISSET(j, &master))
-                    {// кроме слушающего сокета и клиента, от которого данные пришли
-                        if (j != listener && j != i)
-                        {
-                            if (send(j, buf, nbytes, 0) == -1)
-                            {
-                                std::cerr << "Error send_to" << std::endl;
-                            }
-                        }
-                    }
-                }
-            }
+			cmd.exec(*client, *this);
+//			cmd.send_to(*client, *this);
+//            if (handle_message(buf, client) == 1){
+//                for(int j = 0; j <= fd_max; j++) {
+//                    // отсылаем данные всем!
+//                    if (FD_ISSET(j, &master))
+//                    {// кроме слушающего сокета и клиента, от которого данные пришли
+//                        if (j != listener && j != i)
+//                        {
+//                            if (send(j, buf, nbytes, 0) == -1)
+//                            {
+//                                std::cerr << "Error send_to" << std::endl;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
         }
     }
 
@@ -170,21 +194,44 @@ namespace IRC{
         socklen_t addrlen;
         struct sockaddr_storage remoteaddr;
 
+		if (FD_ISSET(listener, &read_fds))
+		{// обрабатываем новые соединения
+			new_client();
+		}
+
+		for (int i = 0; i < clients.size(); ++i) {
+			// Таймаутит незарегестрированных пользователей
+			if (!(clients[i].getFlags() & UMODE_REGISTERED)
+					&& clients[i].login_time + this->registration_timeout - time(NULL) <= 0) {
+				// reply timeout
+			{
+				std::vector<std::string> params;
+				params.push_back("Registration timeout");
+				Command("", "ERROR", params).send_to(clients[i], *this);
+			}
+				quit_client(clients[i].getFd());
+				break;
+			}
+			if (FD_ISSET(clients[i].getFd(), &read_fds)) {
+				handle_chat(clients[i].getFd());
+			}
+		}
+
 //        int listener = Socket::getListener();
         // проходим через существующие соединения, ищем данные для чтения
-        for(int i = 0; i <= fd_max; i++) {
-            if (FD_ISSET(i, &read_fds))
-            { // есть!
-                if (listener == i)
-                {// обрабатываем новые соединения
-                    new_client();
-                }
-                else
-                {// обрабатываем данные клиента
-                   handle_chat(i);
-                } // Закончили обрабатывать данные от клиента
-            } // Закончили обрабатывать новое входящее соединение
-        } // Закончили цикл по дескрипторам
+//        for(int i = 0; i <= fd_max; i++) {
+//            if (FD_ISSET(i, &read_fds))
+//            { // есть!
+//                if (listener == i)
+//                {// обрабатываем новые соединения
+//                    new_client();
+//                }
+//                else
+//                {// обрабатываем данные клиента
+//                   handle_chat(i);
+//                } // Закончили обрабатывать данные от клиента
+//            } // Закончили обрабатывать новое входящее соединение
+//        } // Закончили цикл по дескрипторам
     }
 
     // ListenSocket::SUBD::SUBD() 
@@ -204,6 +251,12 @@ namespace IRC{
 
 	void ListenSocket::set_password(const std::string &password) {
 		this->password = password;
+	}
+
+	void ListenSocket::quit_client(int fd) {
+		clients.erase(std::find_if(clients.begin(), clients.end(), is_fd(fd)));
+		close(fd); // bye!
+		FD_CLR(fd, &master); // удаляем из мастер-сета
 	}
 
 	const std::vector<Client> &ListenSocket::getClients() const { return clients; }

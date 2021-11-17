@@ -40,15 +40,18 @@ namespace IRC {
         in_addr &get_in_addr(struct sockaddr *sa);
         char* recieve_ip(struct sockaddr_storage &remoteaddr);
         void new_client();
-        void handle_chat(int &i);
+        void handle_chat(int const& i);
 		int handle_message(const char *buf, Client *client);
 
 	public:
+		const static time_t registration_timeout = 10;
+
 		const std::vector<Client> &getClients() const;
 		const fd_set &getReadFds() const;
 		const std::string &getServername() const;
 		const std::string &getPassword() const;
 		const std::map<std::string, cmd> &getCommands() const;
+		void quit_client(int fd);
 
 //        class SUBD
 //        {

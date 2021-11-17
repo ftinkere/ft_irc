@@ -6,4 +6,4 @@ set(CMAKE_CXX_STANDARD 98)
 include_directories(includes)
 
 add_executable(ft_irc srcs/main.cpp srcs/ListenSocket.cpp includes/ListenSocket.hpp srcs/Socket.cpp includes/Socket.hpp srcs/Client.cpp includes/Client.hpp srcs/Parser.cpp includes/Parser.hpp srcs/Command.cpp includes/Command.hpp includes/commands.hpp srcs/commands/register.cpp)
-add_executable(experimental srcs/experimental.cpp srcs/Command.cpp includes/Command.hpp)
+add_executable(experimental srcs/experimental.cpp srcs/ListenSocket.cpp includes/ListenSocket.hpp srcs/Socket.cpp includes/Socket.hpp srcs/Client.cpp includes/Client.hpp srcs/Parser.cpp includes/Parser.hpp srcs/Command.cpp includes/Command.hpp includes/commands.hpp srcs/commands/register.cpp)

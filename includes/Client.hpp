@@ -14,6 +14,8 @@
 
 namespace IRC {
 
+	class ListenSocket;
+
 	class Client {
 	private:
 //		std::string pass;
@@ -27,9 +29,15 @@ namespace IRC {
 		std::string nick;
 		std::string user;
 
+		std::string host;
+
+		time_t login_time;
+
 		Client(int fd) : fd(fd), flags(0) {}
 
 		virtual ~Client() {}
+
+		bool try_register(ListenSocket & server);
 
 		// 0b00000001 // flags
 		// 0b00000010 // flag

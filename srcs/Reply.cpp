@@ -7,7 +7,7 @@ int		sendError(const Client &user, ListenSocket & server, int err, const std::st
 	std::string	msg = ":" + server.getServername() + " ";
 	std::stringstream	ss;
 	ss << err;
-	msg += ss.str() + " " + user.getNickname();
+	msg += ss.str();
 	switch (err)
 	{
 	case ERR_NOSUCHNICK:
@@ -146,7 +146,7 @@ int		sendError(const Client &user, ListenSocket & server, int err, const std::st
 		msg += "UNKNOWN ERROR\n";
 		break;
 	}
-	send(user.getSockfd(), msg.c_str(), msg.size(), IRC_NOSIGNAL);
+	send(user.getfd(), msg.c_str(), msg.size(), IRC_NOSIGNAL);
 	return (-1);
 }
 }

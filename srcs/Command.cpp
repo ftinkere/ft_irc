@@ -115,11 +115,12 @@ bool IRC::Command::isValid() const { return valid; }
 void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 	if (commands.find(command) == commands.end()) {
-		sendError(421, command, "");
+		sendError(client, server, 421, command, "");
 		// reply command not found 421
 		// if not registered - ignore
 		return ;
 	} else {
+		sendError(client, server, 451, "", "");
 		// if not registered - not registered 451 (except pass, nick, user)
 		commands.find(command)->second(*this, client, server);
 	}
@@ -145,6 +146,7 @@ void IRC::Command::send_to(IRC::Client const& client, IRC::ListenSocket const& s
 void IRC::Command::send_to(const std::string &nick, IRC::ListenSocket const& server) const {
 	std::vector<const Client>::iterator to = std::find_if(server.getClients().begin(), server.getClients().end(), is_nickname(nick));
 	if (to == server.getClients().end()) {
+		sendError(to, server, 401, nick, "");
 		// reply nick not found
 	} else {
 		send_to(*to, server);

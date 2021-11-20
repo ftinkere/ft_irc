@@ -63,4 +63,9 @@ namespace IRC {
 		} // else reply not args
 	}
 
+	void cmd_quit(Command & cmd, Client& client, ListenSocket& server) {
+	    server.quit_client(client.getFd());
+	    std::cout << "[DEBUG]: " << client.nick << "!" << client.user << "@" << client.host << " " << cmd.getCommand() << ": " << cmd.getParams()[0] << std::endl;
+	}
+
 }

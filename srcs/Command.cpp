@@ -118,7 +118,7 @@ void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	it = commands.find(command);
 	if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER))
 	{
-	    it->second(*this, client, server);
+	    it->second(const_cast<Command &>(*this), client, server);
 	}
 	else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end())
 	{
@@ -136,7 +136,7 @@ void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	}
 	else if (client.getFlags() & UMODE_REGISTERED)
 	{
-	    std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
+	    it->second(const_cast<Command &>(*this), client, server);
 	}
 }
 

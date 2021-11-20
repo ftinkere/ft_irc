@@ -36,6 +36,7 @@ namespace IRC{
 		commands[CMD_PASS] = &cmd_pass;
 		commands[CMD_NICK] = &cmd_nick;
 		commands[CMD_USER] = &cmd_user;
+		commands[CMD_QUIT] = &cmd_quit;
 	}
 
 	void ListenSocket::execute() {

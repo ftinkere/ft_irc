@@ -1,4 +1,5 @@
 #include <fstream>
+#include <sstream>
 #include <Parser.hpp>
 #include "ListenSocket.hpp"
 #include "Command.hpp"
@@ -9,7 +10,11 @@ namespace IRC{
 	std::map<std::string, std::string> get_config(std::string filepath)
 	{
 		std::string buf;
-		std::ifstream conf(filepath);
+		std::fstream conf;
+//		filepath = "feefef";
+		conf.open(filepath);
+		if (!conf)
+		    std::cout << "fgdd";
 		std::map<std::string, std::string> confs;
 
 

@@ -49,6 +49,7 @@ namespace IRC {
 		const std::string &getUser() const { return user; }
 		void setUser(const std::string &user) { Client::user = user; }
 		int getFd() const { return fd; }
+		bool _name_control(std::string &prefix, int v);
 	};
 
 	struct is_nickname_s {
@@ -70,6 +71,7 @@ namespace IRC {
 	// find_if(.., .., is_nickname("nick"));
 	is_nickname_s is_nickname(std::string nickname);
 	is_fd_s is_fd(int fd);
+
 
 
 }

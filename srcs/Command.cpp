@@ -8,6 +8,7 @@
 #include "Parser.hpp"
 #include "Command.hpp"
 
+
 char to_upper(char& c) {
 	c = (char)std::toupper((int)c);
 	return c;
@@ -106,20 +107,36 @@ IRC::Command::~Command() {}
 
 const std::string &IRC::Command::getPrefix() const { return prefix; }
 const std::string &IRC::Command::getCommand() const { return command; }
-const std::vector<std::string> &IRC::Command::getParams() const { return params; }
+std::vector<std::string> &IRC::Command::getParams()  { return params; }
 bool IRC::Command::isValid() const { return valid; }
 
 
 
 void IRC::Command::exec(Client & client, ListenSocket & server) const {
+    std::map<std::string, ListenSocket::cmd>::const_iterator it;
 	std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
-	if (commands.find(command) == commands.end()) {
-		// reply command not found 421
-		// if not registered - ignore
-		return ;
-	} else {
-		// if not registered - not registered 451 (except pass, nick, user)
-		commands.find(command)->second(*this, client, server);
+	it = commands.find(command);
+	if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER))
+	{
+	    it->second(*this, client, server);
+	}
+	else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end())
+	{
+	    // if not registered - not registered 451 (except pass, nick, user)
+	    sendError(client, server, 451, "", "");
+	}
+	else if (!(client.getFlags() & UMODE_REGISTERED) && it == commands.end())
+	{
+	    return;
+	}
+	else if (client.getFlags() & UMODE_REGISTERED && it == commands.end())
+	{
+	    // reply command not found 421
+	    sendError(client, server, 421, command, "");
+	}
+	else if (client.getFlags() & UMODE_REGISTERED)
+	{
+	    std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
 	}
 }
 

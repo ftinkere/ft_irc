@@ -21,9 +21,9 @@ namespace IRC {
 		void set_password(std::string const& password);
 
 		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
-
-    private:
 		std::vector<Client> clients;
+    private:
+
 		fd_set read_fds;
 		std::string servername;
 		std::string password;

@@ -29,3 +29,40 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	std::cout << "[DEBUG]: " << this->nick << "!" << this->user << "@" << this->host << " are registered." << std::endl;
 	return true;
 }
+
+bool IRC::Client::_name_control(std::string &prefix, int v)
+{
+    int i = 0;
+    bool sign = false;
+
+    if (v == 1)
+    {
+        for(int k = 0; k < prefix.length(); k++)
+        {
+            if (!std::isalpha(prefix[k]))
+                return false;
+        }
+    }
+    else{
+        std::string spec = "-[]\\^{}";
+        while(prefix.length() > i)
+        {
+            if (!std::isalnum(prefix[i]))
+            {
+                for (int j = 0; j < spec.length(); j++)
+                {
+                    if (prefix[i] == spec[j])
+                    {
+                        sign = true;
+                        break;
+                    }
+                }
+                if (sign == false)
+                    return false;
+                sign = false;
+            }
+            i++;
+        }
+    }
+    return true;
+}

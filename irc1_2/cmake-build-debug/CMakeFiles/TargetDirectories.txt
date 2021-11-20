@@ -1,4 +1,0 @@
-/Users/latkins/Desktop/irc1/irc1_2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/latkins/Desktop/irc1/irc1_2/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/latkins/Desktop/irc1/irc1_2/cmake-build-debug/CMakeFiles/experimental.dir
-/Users/latkins/Desktop/irc1/irc1_2/cmake-build-debug/CMakeFiles/ft_irc.dir

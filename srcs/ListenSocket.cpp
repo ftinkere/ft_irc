@@ -2,6 +2,7 @@
 #include <sstream>
 #include <Parser.hpp>
 #include "ListenSocket.hpp"
+#include "Client.hpp"
 #include "Command.hpp"
 #include "commands.hpp"
 
@@ -211,9 +212,9 @@ namespace IRC{
 					&& clients[i].login_time + this->registration_timeout - time(NULL) <= 0) {
 				// reply timeout
 			{
-				std::vector<std::string> params;
-				params.push_back("Registration timeout");
-				Command("", "ERROR", params).send_to(clients[i], *this);
+				Command cmd("ERROR");
+				cmd << "Registration timeout";
+				send_command(cmd, clients[i].getFd());
 			}
 				quit_client(clients[i].getFd());
 				break;
@@ -270,5 +271,43 @@ namespace IRC{
 	const std::string &ListenSocket::getServername() const { return servername; }
 	const std::string &ListenSocket::getPassword() const { return password; }
 	const std::map<std::string, ListenSocket::cmd> &ListenSocket::getCommands() const { return commands; }
+
+	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
+		std::vector<Client*> ret;
+
+		if (nick[0] == '#') {
+			// find in channel
+			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
+			// find opers in channel
+			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+		} else {
+			// find nick
+			std::vector<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+			if (it == this->clients.end()) {
+				sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+			} else {
+				ret.push_back(&(*it));
+			}
+		}
+		return ret;
+	}
+
+	void ListenSocket::send_command(const Command &command, const Client &client) {
+		send_command(command, client.getFd());
+	}
+
+	void ListenSocket::send_command(const Command &command, const std::string &nickname) {
+		std::vector<const Client>::iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(nickname));
+		if (to != getClients().end()) {
+			send_command(command, to->getFd());
+		}
+	}
+
+	void ListenSocket::send_command(const Command &command, int fd) {
+		std::string message = command.to_string();
+		send(fd, message.c_str(), message.size(), 0);
+	}
+
+
 }
-//}

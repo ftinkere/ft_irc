@@ -12,30 +12,38 @@
 
 namespace IRC {
 
-class ListenSocket;
-class Client;
-class Command {
-private:
-	std::string					prefix;
-	std::string					command;
-	std::vector<std::string>	params;
-	bool						valid;
+	class ListenSocket;
+	class Client;
 
-public:
-	Command(std::string const& message);
-	Command(const std::string &prefix, const std::string &command, const std::vector<std::string> &params);
+	class Command {
+	private:
+		std::string prefix;
+		std::string command;
+		std::vector<std::string> params;
+		bool valid;
 
-	virtual ~Command();
+	public:
+		Command(std::string const &message);
+		Command(const std::string &prefix, const std::string &command, const std::vector<std::string> &params);
+		Command(const std::string &prefix, const std::string &command);
 
-	const std::string &getPrefix() const;
-	const std::string &getCommand() const;
-	const std::vector<std::string> &getParams() const;
-	bool isValid() const;
+		virtual ~Command();
 
-	void exec(Client & client, ListenSocket & server) const;
-	void send_to(Client const& client, ListenSocket const& server) const;
-	void send_to(std::string const& nick, ListenSocket const& server) const;
-};
+		const std::string &getPrefix() const;
+		const std::string &getCommand() const;
+		const std::vector<std::string> &getParams() const;
+		std::vector<std::string> &getParams();
+		std::string to_string() const;
+
+		bool isValid() const;
+
+		void exec(Client &client, ListenSocket &server) const;
+
+//		void send_to(Client const &client, ListenSocket const &server) const;
+//		void send_to(std::string const &nick, ListenSocket const &server) const;
+	};
+
+	Command &operator<<(Command & command, std::string const& arg);
 
 }
 

@@ -30,7 +30,7 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	return true;
 }
 
-bool IRC::Client::_name_control(std::string &prefix, int v)
+bool IRC::Client::_name_control(std::string const& prefix, int v)
 {
     int i = 0;
     bool sign = false;

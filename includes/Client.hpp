@@ -15,6 +15,7 @@
 namespace IRC {
 
 	class ListenSocket;
+	class Command;
 
 	class Client {
 	private:
@@ -49,7 +50,7 @@ namespace IRC {
 		const std::string &getUser() const { return user; }
 		void setUser(const std::string &user) { Client::user = user; }
 		int getFd() const { return fd; }
-		bool _name_control(std::string &prefix, int v);
+		bool _name_control(std::string const& prefix, int v);
 	};
 
 	struct is_nickname_s {

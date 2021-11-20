@@ -13,10 +13,10 @@ namespace IRC{
 		std::fstream conf;
 //		filepath = "feefef";
 		conf.open(filepath);
-		if (!conf)
-		    std::cout << "fgdd";
 		std::map<std::string, std::string> confs;
-
+		if (!conf.is_open()) {
+			return confs;
+		}
 
 		while (!conf.eof())
 		{

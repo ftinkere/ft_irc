@@ -44,7 +44,7 @@ namespace IRC {
 		int handle_message(const char *buf, Client *client);
 
 	public:
-		const static time_t registration_timeout = 10;
+		const static time_t registration_timeout = 30;
 
 		const std::vector<Client> &getClients() const;
 		const fd_set &getReadFds() const;
@@ -52,6 +52,8 @@ namespace IRC {
 		const std::string &getPassword() const;
 		const std::map<std::string, cmd> &getCommands() const;
 		void quit_client(int fd);
+
+		std::vector<Client&> find_clients(std::string const& nick);
 
 //        class SUBD
 //        {

@@ -107,7 +107,7 @@ IRC::Command::~Command() {}
 
 const std::string &IRC::Command::getPrefix() const { return prefix; }
 const std::string &IRC::Command::getCommand() const { return command; }
-std::vector<std::string> &IRC::Command::getParams()  { return params; }
+const std::vector<std::string> &IRC::Command::getParams() const { return params; }
 bool IRC::Command::isValid() const { return valid; }
 
 
@@ -136,14 +136,21 @@ void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	}
 	else if (client.getFlags() & UMODE_REGISTERED)
 	{
-	    std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
+		it->second(*this, client, server);
+		std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
 	}
 }
 
 void IRC::Command::send_to(IRC::Client const& client, IRC::ListenSocket const& server) const {
 	std::string message;
 
-	message += ":" + server.getServername() + " " + command;
+	if (!this->prefix.empty()) {
+		message += ":" + server.getServername();
+	} else {
+		message += ":" + this->prefix;
+	}
+
+	message += " " + command;
 	for (int i = 0; i < params.size(); ++i) {
 		if (i == params.size() - 1) {
 			message += " :" + params[i] + "\r\n";

@@ -8,7 +8,7 @@
 
 namespace IRC {
 
-	void cmd_pass(Command & cmd, Client& client, ListenSocket& server) {
+	void cmd_pass(Command const& cmd, Client& client, ListenSocket& server) {
 		std::vector<std::string> const& params = cmd.getParams();
 		if (params.empty()) {
 		    sendError(client, server, ERR_NEEDMOREPARAMS, "PASS", "");
@@ -24,7 +24,7 @@ namespace IRC {
 		}
 	}
 
-	void cmd_nick(Command & cmd, Client& client, ListenSocket& server) {
+	void cmd_nick(Command const& cmd, Client& client, ListenSocket& server) {
 		// check nick else reply 432 :Erroneous Nickname
 		Client *to = std::find_if(server.clients.begin(), server.clients.end(),
                                   is_nickname(cmd.getParams()[0])).base();
@@ -47,7 +47,7 @@ namespace IRC {
 		client.try_register(server);
 	}
 
-	void cmd_user(Command & cmd, Client& client, ListenSocket& server) {
+	void cmd_user(Command const& cmd, Client& client, ListenSocket& server) {
 		// check user
 		if (cmd.getParams().empty() || cmd.getParams().size() < 4)
 		{

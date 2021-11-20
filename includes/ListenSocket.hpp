@@ -5,23 +5,31 @@
 #include <vector>
 #include "Socket.hpp"
 #include "Client.hpp"
+#include "Command.hpp"
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 513
 
 namespace IRC {
     class ListenSocket : public Socket
     {
     public:
-        ListenSocket( const char* port);
+        ListenSocket(const char* port);
         ~ListenSocket();
 
 		void execute();
 		void configure(std::string const& path);
+		void set_password(std::string const& password);
+
+		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
 
     private:
 		std::vector<Client> clients;
 		fd_set read_fds;
 		std::string servername;
+		std::string password;
+
+		std::map<std::string, cmd> commands;
+
 //        fd_set master;
 //        int fd_max;
 //        int fd_new;
@@ -32,8 +40,18 @@ namespace IRC {
         in_addr &get_in_addr(struct sockaddr *sa);
         char* recieve_ip(struct sockaddr_storage &remoteaddr);
         void new_client();
-        void handle_chat(int &i);
+        void handle_chat(int const& i);
 		int handle_message(const char *buf, Client *client);
+
+	public:
+		const static time_t registration_timeout = 10;
+
+		const std::vector<Client> &getClients() const;
+		const fd_set &getReadFds() const;
+		const std::string &getServername() const;
+		const std::string &getPassword() const;
+		const std::map<std::string, cmd> &getCommands() const;
+		void quit_client(int fd);
 
 //        class SUBD
 //        {

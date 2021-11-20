@@ -3,5 +3,7 @@ project(ft_irc)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(ft_irc srcs/main.cpp srcs/ListeningSocket.cpp srcs/ListeningSocket.hpp srcs/Socket.cpp srcs/Socket.hpp srcs/Client.cpp srcs/Client.hpp srcs/Parser.cpp srcs/Parser.hpp)
-add_executable(experimental srcs/experimental.cpp)
+include_directories(includes)
+
+add_executable(ft_irc srcs/main.cpp srcs/ListenSocket.cpp includes/ListenSocket.hpp srcs/Socket.cpp includes/Socket.hpp srcs/Client.cpp includes/Client.hpp srcs/Parser.cpp includes/Parser.hpp srcs/Command.cpp includes/Command.hpp includes/commands.hpp srcs/commands/register.cpp)
+add_executable(experimental srcs/experimental.cpp srcs/ListenSocket.cpp includes/ListenSocket.hpp srcs/Socket.cpp includes/Socket.hpp srcs/Client.cpp includes/Client.hpp srcs/Parser.cpp includes/Parser.hpp srcs/Command.cpp includes/Command.hpp includes/commands.hpp srcs/commands/register.cpp)

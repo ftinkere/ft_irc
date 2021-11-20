@@ -15,8 +15,27 @@
 #include <sys/poll.h>
 #include <vector>
 #include <sstream>
+#include <Client.hpp>
+
+#include "../includes/Command.hpp"
 
 int main() {
+//	char name [1024];
+//	name[1023] = '\0';
+//	gethostname(name, 1023);
+//
+//	std::cout << "hostname: " << name << std::endl;
+//
+//
+//	for (;;) {
+//		std::string buf;
+//		std::getline(std::cin, buf);
+//		if (buf == "q") {
+//			break;
+//		}
+//		buf += "\r\n";
+//		IRC::Command cmd(buf);
+//	}
 
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_fd < 0) {
@@ -26,7 +45,7 @@ int main() {
 
 	struct sockaddr_in stSockAddr = {0};
 	stSockAddr.sin_family = PF_INET;
-	stSockAddr.sin_port = htons(6664);
+	stSockAddr.sin_port = htons(6663);
 	stSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (bind(socket_fd, (struct sockaddr *) &stSockAddr, sizeof(stSockAddr)) < 0) {
@@ -98,5 +117,6 @@ int main() {
 			}
 		}
 	}
-		return 0;
+
+	return 0;
 }

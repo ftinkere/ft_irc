@@ -1,15 +1,26 @@
 
 
-#include "ListeningSocket.hpp"
+#include "../includes/ListenSocket.hpp"
 
 #define PORT "9034"   // порт, который мы слушаем
 
 
 
-
-int main(void)
+int main(int argc, char *argv[])
 {
-	IRC::ListenSocket server(PORT);
+
+	std::string port = PORT;
+	std::string password = "";
+
+	if (argc > 1) {
+		port = argv[1];
+	}
+	if (argc > 2) {
+		password = argv[2];
+	}
+
+	IRC::ListenSocket server(port.c_str());
 	server.configure("config.conf");
+	server.set_password(password);
 	server.execute();
 }

@@ -10,6 +10,7 @@
 #define BUFFER_SIZE 513
 
 namespace IRC {
+    class Command;
     class ListenSocket : public Socket
     {
     public:
@@ -20,7 +21,7 @@ namespace IRC {
 		void configure(std::string const& path);
 		void set_password(std::string const& password);
 
-		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
+		typedef void (*cmd)(Command &, Client&, ListenSocket&);
 		std::vector<Client> clients;
     private:
 

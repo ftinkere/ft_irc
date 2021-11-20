@@ -9,12 +9,11 @@
 #include <vector>
 #include "Reply.hpp"
 
-class Client;
 
 namespace IRC {
 
 class ListenSocket;
-
+class Client;
 class Command {
 private:
 	std::string					prefix;

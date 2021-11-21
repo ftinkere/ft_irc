@@ -68,4 +68,70 @@ namespace IRC {
 	    std::cout << "[DEBUG]: " << client.nick << "!" << client.user << "@" << client.host << " " << cmd.getCommand() << ": " << cmd.getParams()[0] << std::endl;
 	}
 
+	void cmd_privmsg(Command const& cmd, Client& client, ListenSocket& server) {
+		std::vector<std::string> param = cmd.getParams(); //параметры
+		size_t len = param.size(); //длина параметров
+		if (param.empty())
+		{
+			sendError(client, server, ERR_NORECIPIENT, cmd.getCommand(), "");
+			return;
+		}
+		if (!len)
+		{
+			sendError(client, server, ERR_NOTEXTTOSEND, "", "");
+			return;
+		}
+		std::vector<Client*> clients = find_clients(cmd.getParams()[0], 0); //ищем все ники
+		std::string msg;
+
+		for(int j = 1; j < len; ++j){ //собираем параметры для отправки
+				msg += param[j];
+		}
+		for(int i = 0; i < clients.size(); ++i){//отправляем
+			sendReply(server.getServername(), clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
+			if (!clients[i]->getAway().empty)
+				sendReply(server.getServername(), client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway(), "", "", "", "", "", "");
+		}
+	}
+
+	void cmd_notice(Command const& cmd, Client& client, ListenSocket& server) {
+		std::vector<std::string> param = cmd.getParams(); //параметры
+		size_t len = param.size(); //длина параметров
+		if (param.empty())
+		{
+			return;
+		}
+		if (!len)
+		{
+			return;
+		}
+		std::vector<Client*> clients = find_clients(cmd.getParams()[0], WITMSG); //ищем все ники
+		std::string msg;
+
+		for(int j = 1; j < len; ++j){ //собираем параметры для отправки
+				msg += param[j];
+		}
+		for(int i = 0; i < clients.size(); ++i){//отправляем
+			sendReply(server.getServername(), clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
+		}
+	}
+
+	void cmd_away(Command const& cmd, Client& client, ListenSocket& server) {
+		std::vector<std::string> param = cmd.getParams(); //параметры
+		std::string msg;
+		if (param.empty())
+		{
+			sendReply(server.getServername(), client, RPL_UNAWAY, "", "", "", "", "", "", "", "");
+			client.clearAway();
+		}
+		else
+		{
+			for(int j = 1; j < len; ++j){ //собираем параметры для отправки
+				msg += param[j];
+			}
+			sendReply(server.getServername(), client, RPL_NOWAWAY, "", "", "", "", "", "", "", "");
+			client.setAway(msg);
+		}
+	}
+
 }

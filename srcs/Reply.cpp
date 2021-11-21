@@ -390,6 +390,7 @@ namespace IRC {
 				break;
 		}
 		send(user.getFd(), msg.c_str(), msg.size(), 0);
+		std::cout << "[DEBUG]: " << msg.c_str() << std::endl;
 		return 0;
 	}
 }

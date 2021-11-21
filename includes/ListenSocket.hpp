@@ -6,6 +6,9 @@
 #include "Socket.hpp"
 #include "Client.hpp"
 #include "Command.hpp"
+#include "Channel.hpp"
+
+#define WITMSG -1
 
 #define BUFFER_SIZE 513
 
@@ -23,6 +26,7 @@ namespace IRC {
 
 		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
 		std::vector<Client> clients;
+		std::map<std::string, Channel> channels;
     private:
 
 		fd_set read_fds;
@@ -54,7 +58,7 @@ namespace IRC {
 		const std::map<std::string, cmd> &getCommands() const;
 		void quit_client(int fd);
 
-		std::vector<Client&> find_clients(std::string const& nick);
+		std::vector<Client*> find_clients(std::string const& nick, int flag);
 
 //        class SUBD
 //        {

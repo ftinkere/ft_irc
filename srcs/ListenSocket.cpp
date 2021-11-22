@@ -38,6 +38,9 @@ namespace IRC{
 		commands[CMD_NICK] = &cmd_nick;
 		commands[CMD_USER] = &cmd_user;
 		commands[CMD_QUIT] = &cmd_quit;
+		commands[CMD_PRIVMSG] = &cmd_privmsg;
+		commands[CMD_NOTICE] = &cmd_notice;
+		commands[CMD_AWAY] = &cmd_away;
 	}
 
 	void ListenSocket::execute() {
@@ -69,6 +72,39 @@ namespace IRC{
 			this->servername = name;
 		}
 		std::cout << "[DEBUG]: servername set to " << this->servername << std::endl;
+	}
+
+	std::vector<Client*> ListenSocket::find_clients(std::string const& nick, int flag, Client& client)
+	{
+		std::vector<Client*> collection;
+		if (nick[0] == '#')
+		{
+			//отправляем сообщение всем пользователям канала
+			//if flag != -1
+			//если нет прав или нет членства ERR_CANNOTSENDTOCHAN        
+		}
+		else if (nick[0] == '@' && nick[1] == '#')
+		{
+			//отправляем сообщение всем админам канала
+			//if flag != -1
+			//если нет прав или нет членства ERR_CANNOTSENDTOCsHAN
+		}
+		else
+		{
+			//отправляем сообщение конкретному никнейму
+            Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(nick)).base();
+            if (to == clients.end().base())
+			{
+				if (flag != -1)
+					sendError(&client, *this, ERR_NOSUCHNICK, nick, "");
+				return collection;
+//                reinterpret_cast<const Client *&>(to)
+			}
+			collection.reserve(1);
+			collection.push_back(to);
+			return collection;
+		}
+        return collection;
 	}
 
 	char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)

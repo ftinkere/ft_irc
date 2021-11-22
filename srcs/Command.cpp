@@ -14,11 +14,11 @@ namespace IRC {
 		return c;
 	}
 
-	IRC::Command::Command(std::string const &message) : valid(true) {
-		if (message.empty() || message[0] == '\n' || message[0] == '\r') {
-			valid = false;
-			return;
-		}
+IRC::Command::Command(std::string const& message): valid(true) {
+	if (message.empty() || message[0] == '\n' || message[0] == '\r') {
+		valid = false;
+		return;
+	}
 
 		std::string::size_type pos = 0;
 
@@ -136,58 +136,34 @@ namespace IRC {
 		return message;
 	}
 
-	void IRC::Command::exec(Client &client, ListenSocket &server) const {
+	void IRC::Command::exec(Client & client, ListenSocket & server) const {
 		std::map<std::string, ListenSocket::cmd>::const_iterator it;
-		std::map<std::string, ListenSocket::cmd> const &commands = server.getCommands();
+		std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 		it = commands.find(command);
-		if (!(client.getFlags() & UMODE_REGISTERED) &&
-			(it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER)) {
+		if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER))
+		{
 			it->second(*this, client, server);
-		} else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end()) {
+		}
+		else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end())
+		{
 			// if not registered - not registered 451 (except pass, nick, user)
-			sendError(client, server, 451, "", "");
-		} else if (!(client.getFlags() & UMODE_REGISTERED) && it == commands.end()) {
+			sendError(&client, server, 451, "", "");
+		}
+		else if (!(client.getFlags() & UMODE_REGISTERED) && it == commands.end())
+		{
 			return;
-		} else if (client.getFlags() & UMODE_REGISTERED && it == commands.end()) {
+		}
+		else if (client.getFlags() & UMODE_REGISTERED && it == commands.end())
+		{
 			// reply command not found 421
-			sendError(client, server, 421, command, "");
-		} else if (client.getFlags() & UMODE_REGISTERED) {
+			sendError(&client, server, 421, command, "");
+		}
+		else if (client.getFlags() & UMODE_REGISTERED)
+		{
 			it->second(*this, client, server);
 			std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
 		}
 	}
-
-	//void IRC::Command::send_to(IRC::Client const& client, IRC::ListenSocket const& server) const {
-	//	std::string message;
-	//
-	//	if (!this->prefix.empty()) {
-	//		message += ":" + server.getServername();
-	//	} else {
-	//		message += ":" + this->prefix;
-	//	}
-	//
-	//	message += " " + command;
-	//	for (int i = 0; i < params.size(); ++i) {
-	//		if (i == params.size() - 1) {
-	//			message += " :" + params[i] + "\r\n";
-	//		} else {
-	//			message += " " + params[i];
-	//		}
-	//	}
-	//	if (params.empty()) {
-	//		message += "\r\n";
-	//	}
-	//	send(client.getFd(), message.c_str(), message.size(), 0);
-	//}
-	//
-	//void IRC::Command::send_to(const std::string &nick, IRC::ListenSocket const& server) const {
-	//	std::vector<const Client>::iterator to = std::find_if(server.getClients().begin(), server.getClients().end(), is_nickname(nick));
-	//	if (to == server.getClients().end()) {
-	//		// reply nick not found
-	//	} else {
-	//		send_to(*to, server);
-	//	}
-	//}
 
 	Command &operator<<(Command & command, std::string const& arg) {
 		command.getParams().push_back(arg);
@@ -195,3 +171,35 @@ namespace IRC {
 	}
 
 }
+
+//void IRC::Command::send_to(IRC::Client const& client, IRC::ListenSocket const& server) const {
+//	std::string message;
+//
+//	if (!this->prefix.empty()) {
+//		message += ":" + server.getServername();
+//	} else {
+//		message += ":" + this->prefix;
+//	}
+//
+//	message += " " + command;
+//	for (int i = 0; i < params.size(); ++i) {
+//		if (i == params.size() - 1) {
+//			message += " :" + params[i] + "\r\n";
+//		} else {
+//			message += " " + params[i];
+//		}
+//	}
+//	if (params.empty()) {
+//		message += "\r\n";
+//	}
+//	send(client.getFd(), message.c_str(), message.size(), 0);
+//}
+//
+//void IRC::Command::send_to(const std::string &nick, IRC::ListenSocket const& server) const {
+//	std::vector<const Client>::iterator to = std::find_if(server.getClients().begin(), server.getClients().end(), is_nickname(nick));
+//	if (to == server.getClients().end()) {
+//		// reply nick not found
+//	} else {
+//		send_to(*to, server);
+//	}
+//}

@@ -29,7 +29,7 @@ namespace IRC {
 		std::string pass;
 		std::string nick;
 		std::string user;
-
+		std::string away;
 		std::string host;
 
 		time_t login_time;
@@ -48,6 +48,9 @@ namespace IRC {
 		const std::string &getNick() const { return nick; }
 		void setNick(const std::string &nick) { Client::nick = nick; }
 		const std::string &getUser() const { return user; }
+		void setAway(const std::string &msg) { Client::away = msg; }
+		void clearAway() { Client::away.clear(); }
+		const std::string &getAway() const { return away; }
 		void setUser(const std::string &user) { Client::user = user; }
 		int getFd() const { return fd; }
 		bool _name_control(std::string const& prefix, int v);

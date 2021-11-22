@@ -86,22 +86,24 @@ namespace IRC{
 		{
 			//отправляем сообщение всем админам канала
 			//if flag != -1
-			//если нет прав или нет членства ERR_CANNOTSENDTOCHAN
+			//если нет прав или нет членства ERR_CANNOTSENDTOCsHAN
 		}
 		else
 		{
 			//отправляем сообщение конкретному никнейму
-			Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(nick)).base();
-			if (to == clients.end().base())
+            Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(nick)).base();
+            if (to == clients.end().base())
 			{
 				if (flag != -1)
-					sendError(client, server, ERR_NOSUCHNICK, nick, "");
+					sendError(to, *this, ERR_NOSUCHNICK, nick, "");
 				return collection;
+//                reinterpret_cast<const Client *&>(to)
 			}
 			collection.reserve(1);
 			collection.push_back(to);
 			return collection;
 		}
+        return collection;
 	}
 
 	char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)

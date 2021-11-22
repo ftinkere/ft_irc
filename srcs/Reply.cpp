@@ -6,7 +6,7 @@
 
 namespace IRC {
 
-	int sendError(const Client &user, ListenSocket &server, int err, const std::string &arg1, const std::string &arg2) {
+	int sendError(const Client *user, ListenSocket &server, int err, const std::string &arg1, const std::string &arg2) {
 		std::string msg = ":" + server.getServername() + " ";
 		std::stringstream ss;
 		ss << err;
@@ -148,11 +148,11 @@ namespace IRC {
 				msg += "UNKNOWN ERROR\n";
 				break;
 		}
-		send(user.getFd(), msg.c_str(), msg.size(), 0);
+		send(user->getFd(), msg.c_str(), msg.size(), 0);
 		return (-1);
 	}
 
-	int sendReply(const std::string &from, const Client &user, int rpl, \
+	int sendReply(const std::string &from, const Client *user, int rpl, \
                         const std::string &arg1, const std::string &arg2, \
                         const std::string &arg3, const std::string &arg4, \
                         const std::string &arg5, const std::string &arg6, \
@@ -160,7 +160,7 @@ namespace IRC {
 		std::string msg = ":" + from + " ";
 		std::stringstream ss;
 		ss << rpl;
-		msg += ss.str();
+		msg += ss.str() + " ";
 		switch (rpl) {
 			case RPL_USERHOST:
 				msg += ":" + arg1 + "\n";
@@ -389,7 +389,7 @@ namespace IRC {
 				msg += "UNKNOWN REPLY\n";
 				break;
 		}
-		send(user.getFd(), msg.c_str(), msg.size(), 0);
+		send(user->getFd(), msg.c_str(), msg.size(), 0);
 		std::cout << "[DEBUG]: " << msg.c_str() << std::endl;
 		return 0;
 	}

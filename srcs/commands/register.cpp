@@ -11,12 +11,12 @@ namespace IRC {
 	void cmd_pass(Command const& cmd, Client& client, ListenSocket& server) {
 		std::vector<std::string> const& params = cmd.getParams();
 		if (params.empty()) {
-		    sendError(client, server, ERR_NEEDMOREPARAMS, "PASS", "");
+		    sendError(&client, server, ERR_NEEDMOREPARAMS, "PASS", "");
 			// reply not args
 		}
 		else if (client.getFlags() & UMODE_REGISTERED)
 		{
-		    sendError(client, server, ERR_ALREADYREGISTRED, "", "");
+		    sendError(&client, server, ERR_ALREADYREGISTRED, "", "");
 		}
 		else
 		{
@@ -30,17 +30,17 @@ namespace IRC {
                                   is_nickname(cmd.getParams()[0])).base();
 		if (cmd.getParams().empty())
 		{
-		    sendError(client, server, ERR_NONICKNAMEGIVEN, "", "");
+		    sendError(&client, server, ERR_NONICKNAMEGIVEN, "", "");
 		    return;
 		}// else reply not args
 		if (!client._name_control(cmd.getParams()[0], 0)) //беру только первый аргумент
 		{
-		    sendError(client, server, ERR_ERRONEUSNICKNAME, cmd.getParams()[0], "");
+		    sendError(&client, server, ERR_ERRONEUSNICKNAME, cmd.getParams()[0], "");
 		    return;
 		}
 		if (to != server.clients.end().base())
 		{
-		    sendError(client, server, ERR_NICKNAMEINUSE, cmd.getParams()[0], "");
+		    sendError(&client, server, ERR_NICKNAMEINUSE, cmd.getParams()[0], "");
 		    return;
 		}
 		client.nick = cmd.getParams()[0];
@@ -51,11 +51,11 @@ namespace IRC {
 		// check user
 		if (cmd.getParams().empty() || cmd.getParams().size() < 4)
 		{
-		    sendError(client, server, ERR_NEEDMOREPARAMS, "USER", "");
+		    sendError(&client, server, ERR_NEEDMOREPARAMS, "USER", "");
 		}
 		else if (client.getFlags() & UMODE_REGISTERED)
 		{
-		    sendError(client, server, ERR_ALREADYREGISTRED, "", "");
+		    sendError(&client, server, ERR_ALREADYREGISTRED, "", "");
 		}
 		else{
 			client.user = cmd.getParams()[0];
@@ -73,15 +73,15 @@ namespace IRC {
 		size_t len = param.size(); //длина параметров
 		if (param.empty())
 		{
-			sendError(client, server, ERR_NORECIPIENT, cmd.getCommand(), "");
+			sendError(&client, server, ERR_NORECIPIENT, cmd.getCommand(), "");
 			return;
 		}
 		if (!len)
 		{
-			sendError(client, server, ERR_NOTEXTTOSEND, "", "");
+			sendError(&client, server, ERR_NOTEXTTOSEND, "", "");
 			return;
 		}
-		std::vector<Client*> clients = find_clients(cmd.getParams()[0], 0); //ищем все ники
+		std::vector<Client*> clients = server.find_clients(cmd.getParams()[0], 0); //ищем все ники
 		std::string msg;
 
 		for(int j = 1; j < len; ++j){ //собираем параметры для отправки
@@ -89,8 +89,8 @@ namespace IRC {
 		}
 		for(int i = 0; i < clients.size(); ++i){//отправляем
 			sendReply(server.getServername(), clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
-			if (!clients[i]->getAway().empty)
-				sendReply(server.getServername(), client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway(), "", "", "", "", "", "");
+			if (!clients[i]->getAway().empty())
+				sendReply(server.getServername(), &client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway(), "", "", "", "", "", "");
 		}
 	}
 
@@ -105,7 +105,7 @@ namespace IRC {
 		{
 			return;
 		}
-		std::vector<Client*> clients = find_clients(cmd.getParams()[0], WITMSG); //ищем все ники
+		std::vector<Client*> clients = server.find_clients(cmd.getParams()[0], WITMSG); //ищем все ники
 		std::string msg;
 
 		for(int j = 1; j < len; ++j){ //собираем параметры для отправки
@@ -121,15 +121,15 @@ namespace IRC {
 		std::string msg;
 		if (param.empty())
 		{
-			sendReply(server.getServername(), client, RPL_UNAWAY, "", "", "", "", "", "", "", "");
+			sendReply(server.getServername(), &client, RPL_UNAWAY, "", "", "", "", "", "", "", "");
 			client.clearAway();
 		}
 		else
 		{
-			for(int j = 1; j < len; ++j){ //собираем параметры для отправки
+			for(int j = 0; j < param.size(); ++j){ //собираем параметры для отправки
 				msg += param[j];
 			}
-			sendReply(server.getServername(), client, RPL_NOWAWAY, "", "", "", "", "", "", "", "");
+			sendReply(server.getServername(), &client, RPL_NOWAWAY, "", "", "", "", "", "", "", "");
 			client.setAway(msg);
 		}
 	}

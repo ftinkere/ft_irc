@@ -28,7 +28,6 @@ class Channel
         void setFlag(int flag) { flags = flags | flag; }
 		// if (getFlags() & UMODE_REGISTERED)
 		int getFlags() const { return flags; }
-		const std::string &getNick() const { return nick; }
     private:
         std::map<std::string, int> base;
         std::string name;

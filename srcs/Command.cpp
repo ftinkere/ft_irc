@@ -123,7 +123,7 @@ void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end())
 	{
 	    // if not registered - not registered 451 (except pass, nick, user)
-	    sendError(client, server, 451, "", "");
+	    sendError(&client, server, 451, "", "");
 	}
 	else if (!(client.getFlags() & UMODE_REGISTERED) && it == commands.end())
 	{
@@ -132,7 +132,7 @@ void IRC::Command::exec(Client & client, ListenSocket & server) const {
 	else if (client.getFlags() & UMODE_REGISTERED && it == commands.end())
 	{
 	    // reply command not found 421
-	    sendError(client, server, 421, command, "");
+	    sendError(&client, server, 421, command, "");
 	}
 	else if (client.getFlags() & UMODE_REGISTERED)
 	{

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <set>
+#include <map>
+#include <string>
 
 #define CMODE_INVITE 0x01 // +i
 #define CMODE_MODER 0x02      // +m

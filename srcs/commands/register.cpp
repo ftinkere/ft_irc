@@ -81,7 +81,7 @@ namespace IRC {
 			sendError(&client, server, ERR_NOTEXTTOSEND, "", "");
 			return;
 		}
-		std::vector<Client*> clients = server.find_clients(cmd.getParams()[0], 0); //ищем все ники
+		std::vector<Client*> clients = server.find_clients(cmd.getParams()[0], 0, client); //ищем все ники
 		std::string msg;
 
 		for(int j = 1; j < len; ++j){ //собираем параметры для отправки
@@ -105,7 +105,7 @@ namespace IRC {
 		{
 			return;
 		}
-		std::vector<Client*> clients = server.find_clients(cmd.getParams()[0], WITMSG); //ищем все ники
+		std::vector<Client*> clients = server.find_clients(cmd.getParams()[0], WITMSG, client); //ищем все ники
 		std::string msg;
 
 		for(int j = 1; j < len; ++j){ //собираем параметры для отправки

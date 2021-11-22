@@ -73,7 +73,7 @@ namespace IRC{
 		std::cout << "[DEBUG]: servername set to " << this->servername << std::endl;
 	}
 
-	std::vector<Client*> ListenSocket::find_clients(std::string const& nick, int flag)
+	std::vector<Client*> ListenSocket::find_clients(std::string const& nick, int flag, Client& client)
 	{
 		std::vector<Client*> collection;
 		if (nick[0] == '#')
@@ -95,7 +95,7 @@ namespace IRC{
             if (to == clients.end().base())
 			{
 				if (flag != -1)
-					sendError(to, *this, ERR_NOSUCHNICK, nick, "");
+					sendError(&client, *this, ERR_NOSUCHNICK, nick, "");
 				return collection;
 //                reinterpret_cast<const Client *&>(to)
 			}

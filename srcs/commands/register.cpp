@@ -5,9 +5,11 @@
 #include "Command.hpp"
 #include "Client.hpp"
 #include "ListenSocket.hpp"
+//#include "Channel.hpp"
 
 namespace IRC {
 
+    class Channel;
 	void cmd_pass(Command const& cmd, Client& client, ListenSocket& server) {
 		std::vector<std::string> const& params = cmd.getParams();
 		if (params.empty()) {
@@ -137,4 +139,98 @@ namespace IRC {
 		}
 	}
 
+    void cmd_join(Command const& cmd, Client& client, ListenSocket& server) {
+        std::vector<std::string> params = cmd.getParams(); //параметры
+        size_t len = params.size();
+        std::vector<std::string> chani;
+        std::vector<std::string> keys;
+        int res;
+        int count = 0;
+
+        if (params.empty()) {
+            sendError(&client, server, ERR_NEEDMOREPARAMS, "JOIN", "");
+            return;
+        }
+        for (int i = 0; i < len; ++i) {
+            res = Channel::check_name(params[i]);
+            if (res == ERR_NAME)
+            {
+                sendError(&client, server, ERR_NOSUCHCHANNEL, params[i], "");
+                // no such channel
+                return ;
+            }
+            else if (res == CHAN)
+            {
+                count++;
+                if (server.channels.find(params[i]) != server.channels.end())
+                {
+                    Channel channel;
+                    channel.setName(params[i]);
+                    server.channels.insert(std::make_pair(params[i], channel));
+                    channel.add_memeber(client.getNick());
+                }
+                chani.push_back(params[i]);
+
+            }
+            else
+            {
+                if (count < 1)
+                {
+                    //need more params
+                    sendError(&client, server, ERR_NEEDMOREPARAMS, "JOIN", "");
+                    return ;
+                }
+                keys.push_back(params[i]);
+            }
+        }
+        size_t size = keys.size();
+        for (unsigned int i = 0; i < chani.size(); ++i)
+        {
+            if (i < size)
+            {
+                std::string key = server.channels[chani[i]].getKey();
+                if (!key.empty())
+                {
+                    if (key == keys[i]){
+                        if (!(server.channels[chani[i]].getFlags() & CMODE_INVITE)) {
+                            if (server.channels[chani[i]].check_limit()) {
+                                server.channels[chani[i]].add_memeber(client.getNick());
+                            } else{
+                                sendError(&client, server, ERR_CHANNELISFULL, chani[i], "");
+                            }
+                        }
+                        else{
+                            sendError(&client, server, ERR_INVITEONLYCHAN, chani[i], "");
+                            return;
+                        }
+                    }
+                    else{
+
+                        sendError(&client, server, ERR_BADCHANNELKEY, chani[i], "");
+                        return;
+                        //no key
+                    }
+                }
+                else
+                {
+                    server.channels[chani[i]].add_memeber(client.getNick());
+                }
+            } else{
+                if (!(server.channels[chani[i]].getFlags() & CMODE_INVITE)) {
+                    if (server.channels[chani[i]].check_limit()) {
+                        server.channels[chani[i]].add_memeber(client.getNick());
+                    } else {
+                        sendError(&client, server, ERR_CHANNELISFULL, chani[i], "");
+                    }
+                }
+                else {
+                    sendError(&client, server, ERR_INVITEONLYCHAN, chani[i], "");
+                    return;
+                }
+            }
+        }
+//ERR_INVITEONLYCHAN
+//ERR_CHANNELISFULL
+//RPL_TOPIC
+    }
 }

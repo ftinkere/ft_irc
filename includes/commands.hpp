@@ -21,6 +21,7 @@ void cmd_quit(Command const &cmd, Client &client, ListenSocket &server);
 void cmd_privmsg(Command const &cmd, Client &client, ListenSocket &server);
 void cmd_notice(Command const &cmd, Client &client, ListenSocket &server);
 void cmd_away(Command const &cmd, Client &client, ListenSocket &server);
+void cmd_join(Command const &cmd, Client &client, ListenSocket &server);
 
 }
 #endif //FT_IRC_COMMANDS_HPP

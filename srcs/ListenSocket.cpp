@@ -40,6 +40,7 @@ namespace IRC{
 		commands[CMD_PRIVMSG] = &cmd_privmsg;
 		commands[CMD_NOTICE] = &cmd_notice;
 		commands[CMD_AWAY] = &cmd_away;
+        commands[CMD_JOIN] = &cmd_join;
 	}
 
 	void ListenSocket::execute() {

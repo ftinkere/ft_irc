@@ -54,6 +54,7 @@ namespace IRC {
 		void setUser(const std::string &user) { Client::user = user; }
 		int getFd() const { return fd; }
 		bool _name_control(std::string const& prefix, int v);
+		std::string get_full_name() const;
 	};
 
 	struct is_nickname_s {

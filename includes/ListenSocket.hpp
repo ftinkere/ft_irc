@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <list>
 #include "Socket.hpp"
 #include "Client.hpp"
 #include "Command.hpp"
@@ -13,7 +14,6 @@
 #define BUFFER_SIZE 513
 
 namespace IRC {
-    class Command;
     class ListenSocket : public Socket
     {
     public:
@@ -25,7 +25,7 @@ namespace IRC {
 		void set_password(std::string const& password);
 
 		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
-		std::vector<Client> clients;
+		std::list<Client> clients;
 		std::map<std::string, Channel> channels;
     private:
 
@@ -51,7 +51,7 @@ namespace IRC {
 	public:
 		const static time_t registration_timeout = 30;
 
-		const std::vector<Client> &getClients() const;
+		const std::list<Client> &getClients() const;
 		const fd_set &getReadFds() const;
 		const std::string &getServername() const;
 		const std::string &getPassword() const;

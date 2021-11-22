@@ -129,6 +129,9 @@ namespace IRC {
 			case ERR_BADCHANNELKEY:
 				cmd << arg1 << "Cannot join channel (+k)";
 				break;
+				case ERR_BADCHANMASK:
+				cmd << arg1 << "Invalid channel name";
+				break;
 			case ERR_NOPRIVILEGES:
 				cmd << "Permission Denied- You're not an IRC operator";
 				break;

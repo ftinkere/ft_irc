@@ -198,7 +198,7 @@ namespace IRC{
         {// у нас есть какие-то данные от клиента
 			// если fd нет, UB
 			buf[nbytes] = '\0';
-			Client* client = std::find_if(clients.begin(), clients.end(), is_fd(i)).base();
+			std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(i));
 			Command cmd(buf);
 			cmd.exec(*client, *this);
 //			cmd.send_to(*client, *this);
@@ -224,8 +224,8 @@ namespace IRC{
 		if (client->getNick().empty()) {
 			client->setNick(buf);
 		} else {
-			Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(buf)).base();
-			if (to != clients.end().base()) {
+			std::list<Client>::iterator to = std::find_if(clients.begin(), clients.end(), is_nickname(buf));
+			if (to != clients.end()) {
 				if (send(to->getFd(), "ping\n", 5, 0) < 0) {
 					std::cerr << "Error send_to" << std::endl;
 				}
@@ -243,21 +243,21 @@ namespace IRC{
 			new_client();
 		}
 
-		for (int i = 0; i < clients.size(); ++i) {
+		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
-			if (!(clients[i].getFlags() & UMODE_REGISTERED)
-					&& clients[i].login_time + this->registration_timeout - time(NULL) <= 0) {
+			if (!(it->getFlags() & UMODE_REGISTERED)
+					&& it->login_time + this->registration_timeout - time(NULL) <= 0) {
 				// reply timeout
 			{
 				Command cmd("ERROR");
 				cmd << "Registration timeout";
-				send_command(cmd, clients[i].getFd());
+				send_command(cmd, it->getFd());
 			}
-				quit_client(clients[i].getFd());
+				quit_client(it->getFd());
 				break;
 			}
-			if (FD_ISSET(clients[i].getFd(), &read_fds)) {
-				handle_chat(clients[i].getFd());
+			if (FD_ISSET(it->getFd(), &read_fds)) {
+				handle_chat(it->getFd());
 			}
 		}
 
@@ -303,7 +303,7 @@ namespace IRC{
 		FD_CLR(fd, &master); // удаляем из мастер-сета
 	}
 
-	const std::vector<Client> &ListenSocket::getClients() const { return clients; }
+	const std::list<Client> &ListenSocket::getClients() const { return clients; }
 	const fd_set &ListenSocket::getReadFds() const { return read_fds; }
 	const std::string &ListenSocket::getServername() const { return servername; }
 	const std::string &ListenSocket::getPassword() const { return password; }
@@ -324,7 +324,7 @@ namespace IRC{
 			}
 		} else {
 			// find nick
-			std::vector<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
 			if (it == this->clients.end()) {
 				if (flag != 0) {
 					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
@@ -345,7 +345,7 @@ namespace IRC{
 	}
 
 	void ListenSocket::send_command(const Command &command, const std::string &nickname) {
-		std::vector<const Client>::iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(nickname));
+		std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(nickname));
 		if (to != getClients().end()) {
 			send_command(command, to->getFd());
 		}

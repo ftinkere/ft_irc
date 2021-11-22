@@ -71,3 +71,7 @@ bool IRC::Client::_name_control(std::string const& prefix, int v)
     }
     return true;
 }
+
+std::string IRC::Client::get_full_name() const {
+	return std::string(this->nick + "!" + this->user + "@" + this->host);
+}

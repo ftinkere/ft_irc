@@ -3,6 +3,9 @@
 #include <set>
 #include <map>
 #include <string>
+#include <vector>
+
+#include "commands.hpp"
 
 #define CMODE_INVITE 0x01 // +i
 #define CMODE_MODER 0x02      // +m
@@ -24,27 +27,40 @@
 //проверка названия канала
 namespace IRC{
 
-    class Client;
-class Channel
-{
-    public:
-        Channel();
-        static int check_name(std::string &_name);
-        void setFlag(int flag) { flags = flags | flag; }
-		// if (getFlags() & UMODE_REGISTERED)
-		int getFlags() const { return flags; }
-        void setName(std::string &_name) { name = _name; }
-        std::string & getKey() { return password; }
-        void add_memeber(const std::string  &member);
-        bool check_limit();
-//        int getLimit() const { return limit; }
-    private:
-        std::map<std::string, int> base;
-        std::string name;
-        int flags;
-        std::string topic;
-        std::string password;
-        int limit;
+	class Channel {
+	private:
+		std::string	name;
+		int			flags;
+		std::string	topic;
+	public:
+		std::string	password;
+		int			limit;
 
-};
+		std::set<Client const*>			voiced;
+		std::set<std::string const*>	voiced;
+		std::set<std::string const*>	opers;
+
+		Channel(std::string const& name);
+		virtual ~Channel() {};
+
+		static bool check_name(std::string const& name);
+		static std::vector<std::string> &get_args(std::string const& name);
+		static std::vector<std::string> split(const std::string &s, char delim);
+		static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+
+		void setFlag(int flag) { flags = flags | flag; }
+		int getFlags() const { return flags; }
+		bool isFlag(int flag) const { return flags & flag; }
+
+		std::string const& getKey() const { return password; }
+		std::string const& getTopic() const { return topic; }
+		void setTopic(std::string &flag) { topic = flag; }
+		void clearTopic() { topic.clear(); }
+
+		void add_memeber(Client const& member);
+		bool check_limit();
+
+		std::string get_names() const;
+
+	};
 }

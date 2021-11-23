@@ -126,6 +126,9 @@ namespace IRC {
 			case ERR_BADCHANNELKEY:
 				msg += " " + arg1 + " :Cannot join channel (+k)\n";
 				break;
+			case ERR_NOCHANMODES:
+				cmd << arg1 << "Channel doesn't support modes";
+				break;
 			case ERR_NOPRIVILEGES:
 				msg += " :Permission Denied- You're not an IRC operator\n";
 				break;

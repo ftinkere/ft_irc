@@ -41,6 +41,9 @@ namespace IRC{
 		commands[CMD_NOTICE] = &cmd_notice;
 		commands[CMD_AWAY] = &cmd_away;
         commands[CMD_JOIN] = &cmd_join;
+		commands[CMD_PART] = &cmd_part;
+		commands[CMD_TOPIC] = &cmd_topic;
+		commands[CMD_NAMES] = &cmd_names;
 	}
 
 	void ListenSocket::execute() {
@@ -307,5 +310,54 @@ namespace IRC{
 	const std::string &ListenSocket::getServername() const { return servername; }
 	const std::string &ListenSocket::getPassword() const { return password; }
 	const std::map<std::string, ListenSocket::cmd> &ListenSocket::getCommands() const { return commands; }
+
+	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client const& feedback) {
+		std::vector<Client*> ret;
+
+		if (nick[0] == '#') {
+			// find in channel
+			if (flag != -1) {
+				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+			}
+		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
+			// find opers in channel
+			if (flag != -1) {
+				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+			}
+		} else {
+			// find nick
+			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+			if (it == this->clients.end()) {
+				if (flag != -1) {
+					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+				}
+			} else {
+				ret.push_back(&(*it));
+			}
+		}
+		return ret;
+	}
+
+	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
+		return find_clients(nick, 0, feedback);
+	}
+
+	void ListenSocket::send_command(const Command &command, const Client &client) {
+		send_command(command, client.getFd());
+	}
+
+	void ListenSocket::send_command(const Command &command, const std::string &nickname) {
+		std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(nickname));
+		if (to != getClients().end()) {
+			send_command(command, to->getFd());
+		}
+	}
+
+	void ListenSocket::send_command(const Command &command, int fd) {
+		std::string message = command.to_string();
+		send(fd, message.c_str(), message.size(), 0);
+	}
+
+
 }
 //}

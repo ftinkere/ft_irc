@@ -2,34 +2,40 @@
 
 namespace IRC {
 
-    Channel::Channel() : limit(-1) {}
+    Channel::Channel(std::string const& name) :
+		name(name),
+		flags(CMODE_NOEXT),
+		limit(0) {}
 
-    int Channel::check_name(std::string &_name)
-    {
-        if (_name[0] != '#')
-            return KEY;
+    bool Channel::check_name(std::string const& name) {
+        if (name[0] != '#')
+            return false;
         std::set<char> sim;
         sim.insert('\r');
         sim.insert('\n');
         sim.insert('\0');
         for (int i = 0; i < name.length(); i++)
         {
-            if (sim.find(_name[i]) != sim.end())
-                return ERR_NAME;
+            if (sim.find(name[i]) != sim.end())
+                return false;
         }
-        return CHAN;
+        return true;
     }
 
-    void Channel::add_memeber(const std::string &member)
+    void Channel::add_memeber(Client const& member)
     {
-        base[member] = 0;
-    }
+//        base[member] = 0;
+		if (users.empty()) {
+			opers.insert(&member.getNick());
+		}
+		users.insert(&member);
+	}
 
     bool Channel::check_limit()
     {
-        if (limit > -1)
+        if (limit > 0)
         {
-            if (base.size() == limit)
+            if (users.size() == limit)
                 return false;
         }
         return true;
@@ -68,5 +74,18 @@ namespace IRC {
         std::vector<std::string> elems;
         split(s, delim, elems);
         return elems;
+    }
+
+    void Channel::erase_client(const Client & cl)
+    {
+        voiced.erase(cl.getNick());
+        opers.erase(cl.getNick());
+        users.erase(cl);
+    }
+
+    void Channel::eraseChannel(std::string &flag)
+    {
+        std::vector<std::string>::iterator it = channels.find(flag);
+        channels.erase(it);
     }
 }

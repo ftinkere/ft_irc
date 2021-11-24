@@ -27,6 +27,11 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	}
 	setFlag(UMODE_REGISTERED);
 	std::cout << "[DEBUG]: " << this->nick << "!" << this->user << "@" << this->host << " are registered." << std::endl;
+
+	sendReply(server.getServername(), *this, RPL_MOTDSTART, server.getServername(), "", "", "", "", "", "", "");
+	sendReply(server.getServername(), *this, RPL_MOTD, "Welcome! Ли сахлии-гар!", "", "", "", "", "", "", "");
+	sendReply(server.getServername(), *this, RPL_ENDOFMOTD, "", "", "", "", "", "", "", "");
+
 	return true;
 }
 
@@ -65,4 +70,8 @@ bool IRC::Client::_name_control(std::string const& prefix, int v)
         }
     }
     return true;
+}
+
+std::string IRC::Client::get_full_name() const {
+	return std::string(this->nick + "!" + this->user + "@" + this->host);
 }

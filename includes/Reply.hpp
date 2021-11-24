@@ -46,7 +46,6 @@
 #define ERR_BANNEDFROMCHAN		474
 #define ERR_BADCHANNELKEY		475
 #define ERR_BADCHANMASK			476
-#define ERR_NOCHANMODES         477
 #define ERR_NOPRIVILEGES		481
 #define ERR_CHANOPRIVSNEEDED	482
 #define ERR_CANTKILLSERVER		483
@@ -129,8 +128,8 @@
 #define RPL_ADMINLOC2			258
 #define RPL_ADMINEMAIL			259
 namespace IRC {
-    int		sendError(const Client *user, ListenSocket & server, int err, const std::string &arg1, const std::string &arg2);
-    int		sendReply(const std::string &from, const Client *user, int rpl, const std::string &arg1,const std::string &arg2, const std::string &arg3,const std::string &arg4, const std::string &arg5,const std::string &arg6, const std::string &arg7,const std::string &arg8);
+    int		sendError(const Client &user, ListenSocket & server, int err, const std::string &arg1, const std::string &arg2);
+    int		sendReply(const std::string &from, const Client &user, int rpl, const std::string &arg1,const std::string &arg2, const std::string &arg3,const std::string &arg4, const std::string &arg5,const std::string &arg6, const std::string &arg7,const std::string &arg8);
 }
 
 #endif //FT_IRC_REPLY_HPP

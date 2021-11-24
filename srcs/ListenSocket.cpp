@@ -2,8 +2,10 @@
 #include <sstream>
 #include <Parser.hpp>
 #include "ListenSocket.hpp"
+#include "Client.hpp"
 #include "Command.hpp"
 #include "commands.hpp"
+#include <set>
 
 namespace IRC{
 
@@ -77,38 +79,38 @@ namespace IRC{
 		std::cout << "[DEBUG]: servername set to " << this->servername << std::endl;
 	}
 
-	std::vector<Client*> ListenSocket::find_clients(std::string const& nick, int flag, Client& client)
-	{
-		std::vector<Client*> collection;
-		if (nick[0] == '#')
-		{
-			//отправляем сообщение всем пользователям канала
-			//if flag != -1
-			//если нет прав или нет членства ERR_CANNOTSENDTOCHAN        
-		}
-		else if (nick[0] == '@' && nick[1] == '#')
-		{
-			//отправляем сообщение всем админам канала
-			//if flag != -1
-			//если нет прав или нет членства ERR_CANNOTSENDTOCsHAN
-		}
-		else
-		{
-			//отправляем сообщение конкретному никнейму
-            Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(nick)).base();
-            if (to == clients.end().base())
-			{
-				if (flag != -1)
-					sendError(&client, *this, ERR_NOSUCHNICK, nick, "");
-				return collection;
-//                reinterpret_cast<const Client *&>(to)
-			}
-			collection.reserve(1);
-			collection.push_back(to);
-			return collection;
-		}
-        return collection;
-	}
+//	std::vector<Client*> ListenSocket::find_clients(std::string const& nick, int flag, Client const& )
+//	{
+//		std::vector<Client*> collection;
+//		if (nick[0] == '#')
+//		{
+//			//отправляем сообщение всем пользователям канала
+//			//if flag != -1
+//			//если нет прав или нет членства ERR_CANNOTSENDTOCHAN
+//		}
+//		else if (nick[0] == '@' && nick[1] == '#')
+//		{
+//			//отправляем сообщение всем админам канала
+//			//if flag != -1
+//			//если нет прав или нет членства ERR_CANNOTSENDTOCsHAN
+//		}
+//		else
+//		{
+//			//отправляем сообщение конкретному никнейму
+//            Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(nick)).base();
+//            if (to == clients.end().base())
+//			{
+//				if (flag != -1)
+//					sendError(client, *this, ERR_NOSUCHNICK, nick, "");
+//				return collection;
+////                reinterpret_cast<const Client *&>(to)
+//			}
+//			collection.reserve(1);
+//			collection.push_back(to);
+//			return collection;
+//		}
+//        return collection;
+//	}
 
 	char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)
     {
@@ -200,7 +202,7 @@ namespace IRC{
         {// у нас есть какие-то данные от клиента
 			// если fd нет, UB
 			buf[nbytes] = '\0';
-			Client* client = std::find_if(clients.begin(), clients.end(), is_fd(i)).base();
+			std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(i));
 			Command cmd(buf);
 			cmd.exec(*client, *this);
 //			cmd.send_to(*client, *this);
@@ -226,8 +228,8 @@ namespace IRC{
 		if (client->getNick().empty()) {
 			client->setNick(buf);
 		} else {
-			Client *to = std::find_if(clients.begin(), clients.end(), is_nickname(buf)).base();
-			if (to != clients.end().base()) {
+			std::list<Client>::iterator to = std::find_if(clients.begin(), clients.end(), is_nickname(buf));
+			if (to != clients.end()) {
 				if (send(to->getFd(), "ping\n", 5, 0) < 0) {
 					std::cerr << "Error send_to" << std::endl;
 				}
@@ -245,21 +247,21 @@ namespace IRC{
 			new_client();
 		}
 
-		for (int i = 0; i < clients.size(); ++i) {
+		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
-			if (!(clients[i].getFlags() & UMODE_REGISTERED)
-					&& clients[i].login_time + this->registration_timeout - time(NULL) <= 0) {
+			if (!(it->getFlags() & UMODE_REGISTERED)
+					&& it->login_time + this->registration_timeout - time(NULL) <= 0) {
 				// reply timeout
 			{
-				std::vector<std::string> params;
-				params.push_back("Registration timeout");
-				Command("", "ERROR", params).send_to(clients[i], *this);
+				Command cmd("ERROR");
+				cmd << "Registration timeout";
+				send_command(cmd, it->getFd());
 			}
-				quit_client(clients[i].getFd());
+				quit_client(it->getFd());
 				break;
 			}
-			if (FD_ISSET(clients[i].getFd(), &read_fds)) {
-				handle_chat(clients[i].getFd());
+			if (FD_ISSET(it->getFd(), &read_fds)) {
+				handle_chat(it->getFd());
 			}
 		}
 
@@ -300,12 +302,17 @@ namespace IRC{
 	}
 
 	void ListenSocket::quit_client(int fd) {
-		clients.erase(std::find_if(clients.begin(), clients.end(), is_fd(fd)));
+		std::list<Client>::iterator cl = std::find_if(clients.begin(), clients.end(), is_fd(fd));
+		for(std::vector<std::string>::iterator it = *cl.getChannels().begin(); it < *cl.getChannels().end(); ++it)
+		{
+			channels[*it].erase_client(*cl); //удаляем из всех групп
+		}
+		clients.erase(cl);
 		close(fd); // bye!
 		FD_CLR(fd, &master); // удаляем из мастер-сета
 	}
 
-	const std::vector<Client> &ListenSocket::getClients() const { return clients; }
+	const std::list<Client> &ListenSocket::getClients() const { return clients; }
 	const fd_set &ListenSocket::getReadFds() const { return read_fds; }
 	const std::string &ListenSocket::getServername() const { return servername; }
 	const std::string &ListenSocket::getPassword() const { return password; }
@@ -316,19 +323,37 @@ namespace IRC{
 
 		if (nick[0] == '#') {
 			// find in channel
-			if (flag != -1) {
-				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+			if (channels.find(nick) != channels.end())
+			{
+				if (chan.isFlag(CMODE_NOEXT))
+				{
+					std::set<Client const*>::iterator it = channels[nick].users.begin();
+					for (; it < channels[nick].users.end(); ++it)
+					{
+						ret.push_back(*it.getNick());
+					} 
+				}
+				else
+				{
+					if (flag != -1) 
+						sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
+				}
 			}
+			else{
+				if (flag != -1) 
+					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+			}
+			//обработать +m
 		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
 			// find opers in channel
 			if (flag != -1) {
-				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+				sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
 			}
 		} else {
 			// find nick
 			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
 			if (it == this->clients.end()) {
-				if (flag != -1) {
+				if (flag != 0) {
 					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
 				}
 			} else {
@@ -360,4 +385,3 @@ namespace IRC{
 
 
 }
-//}

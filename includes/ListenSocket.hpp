@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <list>
 #include "Socket.hpp"
 #include "Client.hpp"
 #include "Command.hpp"
@@ -13,7 +14,6 @@
 #define BUFFER_SIZE 513
 
 namespace IRC {
-    class Command;
     class ListenSocket : public Socket
     {
     public:
@@ -25,7 +25,7 @@ namespace IRC {
 		void set_password(std::string const& password);
 
 		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
-		std::vector<Client> clients;
+		std::list<Client> clients;
 		std::map<std::string, Channel> channels;
     private:
 
@@ -51,14 +51,19 @@ namespace IRC {
 	public:
 		const static time_t registration_timeout = 30;
 
-		const std::vector<Client> &getClients() const;
+		const std::list<Client> &getClients() const;
 		const fd_set &getReadFds() const;
 		const std::string &getServername() const;
 		const std::string &getPassword() const;
 		const std::map<std::string, cmd> &getCommands() const;
 		void quit_client(int fd);
 
-		std::vector<Client*> find_clients(std::string const& nick, int flag, Client& client);
+		std::vector<Client*> find_clients(const std::string &nick, int flag, Client const& feedback);
+		std::vector<Client*> find_clients(const std::string &nick, Client const& feedback);
+
+		void send_command(Command const& command, Client const& client);
+		void send_command(Command const& command, std::string const& nickname);
+		void send_command(Command const& command, int fd);
 
 //        class SUBD
 //        {

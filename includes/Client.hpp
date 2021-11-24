@@ -24,6 +24,7 @@ namespace IRC {
 //		std::string user;
 		int fd;
 		int flags;
+		std::vector<std::string> channels;
 
 	public:
 		std::string pass;
@@ -54,6 +55,10 @@ namespace IRC {
 		void setUser(const std::string &user) { Client::user = user; }
 		int getFd() const { return fd; }
 		bool _name_control(std::string const& prefix, int v);
+		std::string get_full_name() const;
+		void setChannels(std::string &flag) { channels.push_back(flag); }
+		void eraseChannel(std::string &flag);
+		std::vector<std::string> getChannels() const { return channels; }
 	};
 
 	struct is_nickname_s {

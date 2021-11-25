@@ -6,6 +6,7 @@
 #define FT_IRC_CLIENT_HPP
 
 #include <string>
+#include <list>
 
 #define UMODE_REGISTERED 0x01 // +r
 #define UMODE_NOPER 0x02      // +o
@@ -24,7 +25,7 @@ namespace IRC {
 //		std::string user;
 		int fd;
 		int flags;
-		std::vector<std::string> channels;
+		std::list<std::string> channels;
 
 	public:
 		std::string pass;
@@ -58,7 +59,7 @@ namespace IRC {
 		std::string get_full_name() const;
 		void setChannels(std::string &flag) { channels.push_back(flag); }
 		void eraseChannel(std::string &flag);
-		std::vector<std::string> getChannels() const { return channels; }
+        std::list<std::string> getChannels()  { return channels; }
 	};
 
 	struct is_nickname_s {

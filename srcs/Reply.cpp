@@ -215,7 +215,7 @@ namespace IRC {
 				cmd << "ChannelUsers  Name";
 				break;
 			case RPL_LIST:
-				cmd << arg1 << arg2 << arg3;
+				cmd << arg1 << arg2;
 				break;
 			case RPL_LISTEND:
 				cmd << "End of /LIST";

@@ -58,8 +58,8 @@ namespace IRC {
 		const std::map<std::string, cmd> &getCommands() const;
 		void quit_client(int fd);
 
-		std::vector<Client*> find_clients(const std::string &nick, int flag, Client const& feedback);
-		std::vector<Client*> find_clients(const std::string &nick, Client const& feedback);
+		std::vector<Client*> find_clients(const std::string &nick, int flag, Client & feedback);
+		std::vector<Client*> find_clients(const std::string &nick, Client & feedback);
 
 		void send_command(Command const& command, Client const& client);
 		void send_command(Command const& command, std::string const& nickname);

@@ -21,16 +21,15 @@ namespace IRC{
 
 	class Channel {
 	private:
-		std::string	name;
+        std::string	name;
 		int			flags;
 		std::string	topic;
 		static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 	public:
-		std::string	topic;
 		std::string	password;
 		int			limit;
 
-		std::set<Client const*>			users;
+		std::set<Client*>			users;
 		std::set<std::string const*>	voiced;
 		std::set<std::string const*>	opers;
 
@@ -46,12 +45,19 @@ namespace IRC{
 
 		std::string const& getKey() const { return password; }
 
-		void add_memeber(Client const& member);
+        std::string const& getTopic() const { return topic; }
+        void setTopic(const std::string & cl)  { topic = cl; }
+        void clearTopic()  { topic.clear(); }
+
+		void add_memeber(Client & member);
 		bool check_limit();
 
-		void erase_client(const Client & cl);
+
 
 		std::string get_names() const;
 
-	};
+        void erase_client(Client &cl);
+
+        Channel();
+    };
 }

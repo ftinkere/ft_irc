@@ -46,6 +46,8 @@ namespace IRC{
 		commands[CMD_PART] = &cmd_part;
 		commands[CMD_TOPIC] = &cmd_topic;
 		commands[CMD_NAMES] = &cmd_names;
+        commands[CMD_LIST] = &cmd_list;
+        commands[CMD_INVITE] = &cmd_invite;
 	}
 
 	void ListenSocket::execute() {
@@ -303,9 +305,11 @@ namespace IRC{
 
 	void ListenSocket::quit_client(int fd) {
 		std::list<Client>::iterator cl = std::find_if(clients.begin(), clients.end(), is_fd(fd));
-		for(std::vector<std::string>::iterator it = *cl.getChannels().begin(); it < *cl.getChannels().end(); ++it)
+        Client client = *cl;
+		for(std::list<std::string>::iterator it = client.getChannels().begin(); it != client.getChannels().end(); ++it)
 		{
-			channels[*it].erase_client(*cl); //удаляем из всех групп
+            std::string can = *it;
+			channels[can].erase_client(*cl); //удаляем из всех групп
 		}
 		clients.erase(cl);
 		close(fd); // bye!
@@ -318,19 +322,20 @@ namespace IRC{
 	const std::string &ListenSocket::getPassword() const { return password; }
 	const std::map<std::string, ListenSocket::cmd> &ListenSocket::getCommands() const { return commands; }
 
-	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client const& feedback) {
+	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client& feedback) {
 		std::vector<Client*> ret;
 
 		if (nick[0] == '#') {
 			// find in channel
 			if (channels.find(nick) != channels.end())
 			{
-				if (chan.isFlag(CMODE_NOEXT))
+				if (channels[nick].isFlag(CMODE_NOEXT) || channels[nick].users.find(&feedback) != channels[nick].users.end())//если есть +n или клиент состоит в группе
 				{
-					std::set<Client const*>::iterator it = channels[nick].users.begin();
-					for (; it < channels[nick].users.end(); ++it)
+					std::set<Client*>::iterator it = channels[nick].users.begin();
+					for (; it != channels[nick].users.end(); ++it)
 					{
-						ret.push_back(*it.getNick());
+                        Client *client = *it;
+						ret.push_back(client);
 					} 
 				}
 				else
@@ -346,9 +351,29 @@ namespace IRC{
 			//обработать +m
 		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
 			// find opers in channel
-			if (flag != -1) {
-				sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
-			}
+            if (channels.find(nick) != channels.end())
+            {
+                if (channels[nick].isFlag(CMODE_NOEXT) || channels[nick].users.find(&feedback) != channels[nick].users.end())//если есть +n или клиент состоит в группе
+                {
+                    std::set<std::string const*>::iterator it = channels[nick].opers.begin();
+                    for (; it != channels[nick].opers.end(); ++it)
+                    {
+                        std::string io = reinterpret_cast<const char *>(*it);
+                        std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(io));
+                        Client client = *to;
+                        ret.push_back(&client);
+                    }
+                }
+                else
+                {
+                    if (flag != -1)
+                        sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
+                }
+            }
+            else{
+                if (flag != -1)
+                    sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+            }
 		} else {
 			// find nick
 			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
@@ -363,7 +388,7 @@ namespace IRC{
 		return ret;
 	}
 
-	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
+	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client & feedback) {
 		return find_clients(nick, 0, feedback);
 	}
 

@@ -22,7 +22,7 @@ namespace IRC {
         return true;
     }
 
-    void Channel::add_memeber(Client const& member)
+    void Channel::add_memeber(Client & member)
     {
 //        base[member] = 0;
 		if (users.empty()) {
@@ -47,7 +47,7 @@ namespace IRC {
 		for (std::set<std::string const*>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
 			ret += '@' + **it + ' ';
 		}
-		for (std::set<Client const*>::const_iterator it = users.begin(); it != users.end(); ++it) {
+		for (std::set<Client*>::const_iterator it = users.begin(); it != users.end(); ++it) {
 			if (opers.find(&(*it)->getNick()) == opers.end()) {
 				ret += (*it)->getNick() + ' ';
 			}
@@ -76,16 +76,15 @@ namespace IRC {
         return elems;
     }
 
-    void Channel::erase_client(const Client & cl)
+    void Channel::erase_client(Client & cl)
     {
-        voiced.erase(cl.getNick());
-        opers.erase(cl.getNick());
-        users.erase(cl);
+        voiced.erase(&cl.getNick());
+        opers.erase(&cl.getNick());
+        users.erase(&cl);
     }
 
-    void Channel::eraseChannel(std::string &flag)
-    {
-        std::vector<std::string>::iterator it = channels.find(flag);
-        channels.erase(it);
-    }
+    Channel::Channel() :name(name),
+    flags(CMODE_NOEXT),
+    limit(0) {}
+
 }

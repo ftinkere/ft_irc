@@ -489,4 +489,123 @@ namespace IRC {
         }
         sendReply(server.getServername(), client, RPL_LISTEND, "", "", "", "", "", "", "", "");
     }
+
+    void cmd_invite(Command const &cmd, Client &client, ListenSocket &server)
+    {
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
+        std::vector<std::string> chans;
+//        std::vector<std::string> keys;
+        int res;
+        int count = 0;
+
+        if (params.empty() || params.size() < 2){
+            sendError(client, server, ERR_NEEDMOREPARAMS, "INVITE", "");
+            return;
+        }
+        if (!Channel::check_name(params[1])) {
+            return;
+        }
+        if (server.channels.find(params[1]) == server.channels.end()){
+            return;
+        }
+        Channel channel = server.channels.find(params[1])->second;
+        std::list<Client>::iterator it = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(params[0]));
+        if (it == server.clients.end()) {//если нет ника
+            sendError(client, server, ERR_NOSUCHNICK, params[0], "");
+            return;
+        }
+        Client invit = *it;
+        if (channel.users.find(&client) == channel.users.end()){//если нет меня на канале
+            sendError(client, server, ERR_NOTONCHANNEL, params[1], "");
+            return;
+        }
+        if (channel.users.find(&invit) != channel.users.end()){//если чувак уже на канале
+            sendError(client, server, ERR_USERONCHANNEL, params[0], params[1]);
+            return;
+        }
+        if (channel.isFlag(CMODE_INVITE) && channel.opers.find(&client.getNick()) == channel.opers.end()) {
+            sendError(client, server, ERR_CHANOPRIVSNEEDED, params[1], "");//если нет привелегий
+            return;
+        }
+        sendReply(server.getServername(), client, RPL_INVITING, params[1], params[0], "", "", "", "", "", "");
+        sendReply(server.getServername(), invit, RPL_AWAY, client.getNick(), "you were invited to the channel", "",
+                  "", "", "", "", "");
+        channel.add_memeber(invit);
+        invit.setChannels(const_cast<std::string &>(params[1]));
+    }
+
+    void cmd_kick(Command const &cmd, Client &client, ListenSocket &server)
+    {
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
+        std::vector<std::string> chans;
+        std::vector<std::string> nicks;
+
+        if (!params.empty() || params.size() < 2) {
+            sendError(client, server, ERR_NEEDMOREPARAMS, "KICK", "");
+            return;
+        }
+        chans = Channel::split(params[0], ',');
+        nicks = Channel::split(params[1], ',');
+        size_t len = nicks.size();
+        for (int i = 0; i < chans.size(); ++i) {
+            if (server.channels.find(chans[i]) == server.channels.end())
+            {
+                sendError(client, server, ERR_NOSUCHCHANNEL, chans[i], "");
+                continue;
+            }
+            if (chans.size() == 1)
+            { //если один канал тогда любое количество ников
+                Channel channel = server.channels.find(chans[0])->second;
+                if (channel.users.find(&client) == channel.users.end())
+                {
+                    sendError(client, server, ERR_NOTONCHANNEL, chans[0], "");
+                    return;
+                }
+                if (channel.opers.find(&client.getNick()) == channel.opers.end())
+                {
+                    sendError(client, server, ERR_CHANOPRIVSNEEDED, chans[0], "");//если нет привелегий
+                    return;
+                }
+                for (int j = 0; j < len; ++j)
+                {
+                    std::list<Client>::iterator it = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(nicks[j]));
+                    Client kicked = *it;
+                    if (channel.users.erase(&kicked) == 0)// пытаемся удалить
+                    {
+                        sendError(client, server, ERR_USERONCHANNEL, nicks[j], chans[0]);
+                        continue;
+                    }
+                    channel.opers.erase(&kicked.getNick());
+                    channel.voiced.erase(&kicked.getNick());
+                    client.eraseChannel(chans[0]);
+                }
+            }
+            else
+            {
+                Channel channel = server.channels.find(chans[i])->second;
+                if (channel.users.find(&client) == channel.users.end())
+                {
+                    sendError(client, server, ERR_NOTONCHANNEL, chans[i], "");
+                    continue;
+                }
+                if (channel.opers.find(&client.getNick()) == channel.opers.end())
+                {
+                    sendError(client, server, ERR_CHANOPRIVSNEEDED, chans[i], "");//если нет привелегий
+                    continue;
+                }
+                if (nicks.size() <= i)
+                    return;
+                std::list<Client>::iterator it = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(nicks[i]));
+                Client kicked = *it;
+                if (channel.users.erase(&kicked) == 0)
+                {
+                    sendError(client, server, ERR_USERONCHANNEL, nicks[i], chans[i]);
+                    continue;
+                }
+                channel.opers.erase(&kicked.getNick());
+                channel.voiced.erase(&kicked.getNick());
+                client.eraseChannel(chans[i]);
+            }
+        }
+    }
 }

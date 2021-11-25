@@ -48,6 +48,7 @@ namespace IRC{
 		commands[CMD_NAMES] = &cmd_names;
         commands[CMD_LIST] = &cmd_list;
         commands[CMD_INVITE] = &cmd_invite;
+        commands[CMD_KICK] = &cmd_kick;
 	}
 
 	void ListenSocket::execute() {

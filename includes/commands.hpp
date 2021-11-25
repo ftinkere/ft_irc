@@ -27,6 +27,7 @@ void cmd_topic(Command const &cmd, Client &client, ListenSocket &server);
 void cmd_names(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_list(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_invite(Command const &cmd, Client &client, ListenSocket &server);
+    void cmd_kick(Command const &cmd, Client &client, ListenSocket &server);
 
 }
 #endif //FT_IRC_COMMANDS_HPP

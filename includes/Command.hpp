@@ -7,8 +7,11 @@
 
 #include <string>
 #include <vector>
-#include "Reply.hpp"
-
+//#include "Reply.hpp"
+//#include "Client.hpp"
+//#include "ListenSocket.hpp"
+//#include "Parser.hpp"
+#include "commands.hpp"
 
 namespace IRC {
 

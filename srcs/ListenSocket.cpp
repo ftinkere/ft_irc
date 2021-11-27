@@ -1,10 +1,6 @@
 #include <fstream>
 #include <sstream>
-#include <Parser.hpp>
 #include "ListenSocket.hpp"
-#include "Client.hpp"
-#include "Command.hpp"
-#include "commands.hpp"
 #include <set>
 
 namespace IRC{
@@ -50,12 +46,16 @@ namespace IRC{
         commands[CMD_INVITE] = &cmd_invite;
         commands[CMD_KICK] = &cmd_kick;
         commands[CMD_MODE] = &cmd_mode;
-        Channel::modes.insert(TOPIC);
-        Channel::modes.insert(INVIT);
-        Channel::modes.insert(MODES);
-        Channel::modes.insert(SECRET);
-        Channel::modes.insert(SPEAK); //это все для более быстрого поиска модов
-
+        commands[CMD_OPER] = &cmd_oper;
+        Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
+        Channel::modes.insert(std::make_pair(INVIT, Channel::I));
+        Channel::modes.insert(std::make_pair(MODES, Channel::M));
+        Channel::modes.insert(std::make_pair(SECRET, Channel::S));
+        Channel::modes.insert(std::make_pair(SPEAK, Channel::N)); //это все для более быстрого поиска модов
+        Channel::modes.insert(std::make_pair(OPER, Channel::O));
+        Channel::modes.insert(std::make_pair(VOICER, Channel::V));
+        Channel::modes.insert(std::make_pair(KEY, Channel::K));
+        Channel::modes.insert(std::make_pair(LEN, Channel::L));
 	}
 
 	void ListenSocket::execute() {
@@ -86,6 +86,14 @@ namespace IRC{
 			gethostname(name, 1023);
 			this->servername = name;
 		}
+        std::map<std::string, std::string>::iterator it = configs.find("operators");
+        if (it != configs.end())
+        {
+            if (it->second == "yes")
+            {
+                opers = get_config("operators.conf");
+            }
+        }
 		std::cout << "[DEBUG]: servername set to " << this->servername << std::endl;
 	}
 
@@ -337,14 +345,20 @@ namespace IRC{
 			// find in channel
 			if (channels.find(nick) != channels.end())
 			{
-				if (channels[nick].isFlag(CMODE_NOEXT) || channels[nick].users.find(&feedback) != channels[nick].users.end())//если есть +n или клиент состоит в группе
+                Channel chan = channels[nick];
+				if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&feedback) != chan.users.end())//если есть +n или клиент состоит в группе
 				{
-					std::set<Client*>::iterator it = channels[nick].users.begin();
-					for (; it != channels[nick].users.end(); ++it)
-					{
-                        Client *client = *it;
-						ret.push_back(client);
-					} 
+                    if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
+                        std::set<Client *>::iterator it = chan.users.begin();
+                        for (; it != chan.users.end(); ++it) {
+                            Client *client = *it;
+                            ret.push_back(client);
+                        }
+                    }
+                    else{
+                        if (flag != -1)
+                            sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
+                    }
 				}
 				else
 				{
@@ -361,15 +375,21 @@ namespace IRC{
 			// find opers in channel
             if (channels.find(nick) != channels.end())
             {
-                if (channels[nick].isFlag(CMODE_NOEXT) || channels[nick].users.find(&feedback) != channels[nick].users.end())//если есть +n или клиент состоит в группе
+                Channel chan = channels[nick];
+                if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&feedback) != chan.users.end())//если есть +n или клиент состоит в группе
                 {
-                    std::set<std::string const*>::iterator it = channels[nick].opers.begin();
-                    for (; it != channels[nick].opers.end(); ++it)
-                    {
-                        std::string io = reinterpret_cast<const char *>(*it);
-                        std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(io));
-                        Client client = *to;
-                        ret.push_back(&client);
+                    if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
+                        std::set<std::string const *>::iterator it = chan.opers.begin();//берем всех оперов
+                        for (; it != chan.opers.end(); ++it) {
+                            std::string io = reinterpret_cast<const char *>(*it);
+                            std::list<Client>::const_iterator to = std::find_if(getClients().begin(),
+                                                                                getClients().end(), is_nickname(io));
+                            Client client = *to;
+                            ret.push_back(&client);
+                        }
+                    } else{
+                        if (flag != -1)
+                            sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
                     }
                 }
                 else

@@ -5,15 +5,17 @@
 #include <vector>
 #include <list>
 #include "Socket.hpp"
-#include "Client.hpp"
-#include "Command.hpp"
-#include "Channel.hpp"
+//#include "Command.hpp"
+//#include "Channel.hpp"
+#include "commands.hpp"
 
 #define WITMSG -1
 
 #define BUFFER_SIZE 513
 
 namespace IRC {
+    class Channel;
+    class Command;
     class ListenSocket : public Socket
     {
     public:
@@ -34,6 +36,7 @@ namespace IRC {
 		std::string password;
 
 		std::map<std::string, cmd> commands;
+        std::map<std::string, std::string> opers;
 
 //        fd_set master;
 //        int fd_max;

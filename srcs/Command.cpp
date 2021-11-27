@@ -3,9 +3,6 @@
 //
 
 #include <iostream>
-#include <Client.hpp>
-#include <ListenSocket.hpp>
-#include "Parser.hpp"
 #include "Command.hpp"
 
 namespace IRC {

@@ -12,11 +12,15 @@
 #define CMODE_NOEXT 0x08    // +n
 #define CMODE_TOPIC 0x10    // +t
 
-#define INVIT "i"
-#define MODES "m"
-#define SECRET "s"
-#define SPEAK "n"
-#define TOPIC "t"
+#define INVIT 'i'
+#define MODES 'm'
+#define SECRET 's'
+#define SPEAK 'n'
+#define TOPIC 't'
+#define OPER 'o'
+#define VOICER 'v'
+#define KEY 'k'
+#define LEN 'l'
 
 //проверка названия канала
 namespace IRC{
@@ -26,11 +30,11 @@ namespace IRC{
         std::string	name;
 		int			flags;
 		std::string	topic;
+        std::string	password;
+        int			limit;
 		static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 	public:
-		std::string	password;
-		int			limit;
-        static std::set<const char> modes;
+
 
 		std::set<Client*>			users;
 		std::set<std::string const*>	voiced;
@@ -43,10 +47,17 @@ namespace IRC{
 		static std::vector<std::string> split(const std::string &s, char delim);
 
 		void setFlag(int flag) { flags = flags | flag; }
+        void zeroFlag(int flag) { flags &= ~flag; }
 		int getFlags() const { return flags; }
 		bool isFlag(int flag) const { return flags & flag; }
 
 		std::string const& getKey() const { return password; }
+        void setKey(std::string const& key) { password = key; }
+        void clearKey() { password.clear(); }
+
+        int const& getLimit() const { return limit; }
+        void setLimit(int const& key) { limit = key; }
+        void clearLimit() { limit = 0; }
 
         std::string const& getTopic() const { return topic; }
         void setTopic(const std::string & cl)  { topic = cl; }
@@ -55,8 +66,19 @@ namespace IRC{
 		void add_memeber(Client & member);
 		bool check_limit();
 
+        enum model{
+            I,
+            M,
+            S,
+            N,
+            T,
+            O,
+            V,
+            K,
+            L
+        };
 
-
+        static std::map<const char, size_t> modes;
 		std::string get_names() const;
 
         void erase_client(Client &cl);

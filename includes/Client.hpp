@@ -7,7 +7,7 @@
 
 #include <string>
 #include <list>
-
+#include "commands.hpp"
 #define UMODE_REGISTERED 0x01 // +r
 #define UMODE_NOPER 0x02      // +o
 #define UMODE_INVIS 0x04      // +i
@@ -16,7 +16,7 @@
 namespace IRC {
 
 	class ListenSocket;
-	class Command;
+//	class Command;
 
 	class Client {
 	private:

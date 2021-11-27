@@ -1,11 +1,14 @@
 #include "Channel.hpp"
 
 namespace IRC {
-
+    std::map<const char, size_t> Channel::modes;
     Channel::Channel(std::string const& name) :
 		name(name),
 		flags(CMODE_NOEXT),
-		limit(0) {}
+		limit(0)
+        {
+        this->setFlag(CMODE_MODER);
+    }
 
     bool Channel::check_name(std::string const& name) {
         if (name[0] != '#')
@@ -27,6 +30,7 @@ namespace IRC {
 //        base[member] = 0;
 		if (users.empty()) {
 			opers.insert(&member.getNick());
+            voiced.insert(&member.getNick());
 		}
 		users.insert(&member);
 	}
@@ -83,7 +87,7 @@ namespace IRC {
         users.erase(&cl);
     }
 
-    Channel::Channel() :name(name),
+    Channel::Channel() :
     flags(CMODE_NOEXT),
     limit(0) {}
 

@@ -49,6 +49,13 @@ namespace IRC{
         commands[CMD_LIST] = &cmd_list;
         commands[CMD_INVITE] = &cmd_invite;
         commands[CMD_KICK] = &cmd_kick;
+        commands[CMD_MODE] = &cmd_mode;
+        Channel::modes.insert(TOPIC);
+        Channel::modes.insert(INVIT);
+        Channel::modes.insert(MODES);
+        Channel::modes.insert(SECRET);
+        Channel::modes.insert(SPEAK); //это все для более быстрого поиска модов
+
 	}
 
 	void ListenSocket::execute() {

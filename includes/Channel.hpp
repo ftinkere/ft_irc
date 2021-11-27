@@ -12,9 +12,11 @@
 #define CMODE_NOEXT 0x08    // +n
 #define CMODE_TOPIC 0x10    // +t
 
-//#define CHAN 0    // name channels
-//#define KEY 1 // name KEY
-//#define ERR_NAME -1 // error name
+#define INVIT "i"
+#define MODES "m"
+#define SECRET "s"
+#define SPEAK "n"
+#define TOPIC "t"
 
 //проверка названия канала
 namespace IRC{
@@ -28,6 +30,7 @@ namespace IRC{
 	public:
 		std::string	password;
 		int			limit;
+        static std::set<const char> modes;
 
 		std::set<Client*>			users;
 		std::set<std::string const*>	voiced;

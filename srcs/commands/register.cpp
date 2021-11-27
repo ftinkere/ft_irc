@@ -572,7 +572,7 @@ namespace IRC {
                     Client kicked = *it;
                     if (channel.users.erase(&kicked) == 0)// пытаемся удалить
                     {
-                        sendError(client, server, ERR_USERONCHANNEL, nicks[j], chans[0]);
+                        sendError(client, server, ERR_USERNOTINCHANNEL, nicks[j], chans[0]);
                         continue;
                     }
                     channel.opers.erase(&kicked.getNick());
@@ -580,7 +580,7 @@ namespace IRC {
                     client.eraseChannel(chans[0]);
                 }
             }
-            else
+            else//один канал один ник
             {
                 Channel channel = server.channels.find(chans[i])->second;
                 if (channel.users.find(&client) == channel.users.end())
@@ -599,7 +599,7 @@ namespace IRC {
                 Client kicked = *it;
                 if (channel.users.erase(&kicked) == 0)
                 {
-                    sendError(client, server, ERR_USERONCHANNEL, nicks[i], chans[i]);
+                    sendError(client, server, ERR_USERNOTINCHANNEL, nicks[i], chans[i]);
                     continue;
                 }
                 channel.opers.erase(&kicked.getNick());
@@ -607,5 +607,33 @@ namespace IRC {
                 client.eraseChannel(chans[i]);
             }
         }
+    }
+    void cmd_mode(Command const &cmd, Client &client, ListenSocket &server)
+    {
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
+//        std::vector<std::string> chans;
+//        std::vector<std::string> nicks;
+        if (!params.empty() || params.size() < 2) {
+            sendError(client, server, ERR_NEEDMOREPARAMS, "MODE", "");
+            return;
+        }
+        if (server.channels.find(params[0]) == server.channels.end())
+        {
+            sendError(client, server, ERR_NOSUCHCHANNEL, params[0], "");
+            return;
+        }
+        Channel channel = server.channels.find(params[0])->second;
+        if (channel.opers.find(&client.getNick()) == channel.opers.end())
+        {
+            sendError(client, server, ERR_CHANOPRIVSNEEDED, params[0], "");//если нет привелегий
+            return;
+        }
+//        res = channel.modes.find(params[1][1]);
+        if (params[1].size() != 2  || channel.modes.find(params[1][1]) == channel.modes.end())
+        {
+            sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
+            return;
+        }
+//        switch()
     }
 }

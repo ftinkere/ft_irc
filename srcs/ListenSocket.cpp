@@ -56,6 +56,7 @@ namespace IRC{
         Channel::modes.insert(std::make_pair(VOICER, Channel::V));
         Channel::modes.insert(std::make_pair(KEY, Channel::K));
         Channel::modes.insert(std::make_pair(LEN, Channel::L));
+        //frfgrg
 	}
 
 	void ListenSocket::execute() {

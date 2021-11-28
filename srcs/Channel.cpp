@@ -53,7 +53,8 @@ namespace IRC {
 		}
 		for (std::set<Client*>::const_iterator it = users.begin(); it != users.end(); ++it) {
 			if (opers.find(&(*it)->getNick()) == opers.end()) {
-				ret += (*it)->getNick() + ' ';
+                if (!(*it)->getFlags() & UMODE_INVIS)//если ник видимый
+				    ret += (*it)->getNick() + ' ';
 			}
 		}
 		if (!ret.empty()) {

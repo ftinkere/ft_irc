@@ -29,6 +29,8 @@ namespace IRC {
 		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
 		std::list<Client> clients;
 		std::map<std::string, Channel> channels;
+		std::map<std::string, std::string> opers;
+		std::map<std::string, std::string> admin;
     private:
 
 		fd_set read_fds;
@@ -36,7 +38,6 @@ namespace IRC {
 		std::string password;
 
 		std::map<std::string, cmd> commands;
-        std::map<std::string, std::string> opers;
 
 //        fd_set master;
 //        int fd_max;
@@ -63,7 +64,37 @@ namespace IRC {
 
 		std::vector<Client*> find_clients(const std::string &nick, int flag, Client & feedback);
 		std::vector<Client*> find_clients(const std::string &nick, Client & feedback);
-
+		template <class T>
+		T& nick_or_channel(const std::string &nick, int flag, Client& feedback)
+		{	
+			if (nick[0] == '#')
+			{
+				std::map<std::string, Channel>::iterator it = channels.find(nick);
+				if (it == channels.end())
+				{
+					sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+					return NULL;
+				}
+				Channel channel = it->second;
+				return channel;
+			}
+			if (feedback.getNick() == nick)
+				return feedback;
+			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+			if (it == this->clients.end()) {
+				sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+				return NULL;
+			}
+			if (feedback.getFlags() & UMODE_NOPER)
+			{
+				return *it;
+			}
+			else
+			{
+				sendError(feedback, *this, ERR_USERSDONTMATCH, "", "");//если не опер то не можешь редактировать чужой ник
+				return NULL;
+			}
+		}
 		void send_command(Command const& command, Client const& client);
 		void send_command(Command const& command, std::string const& nickname);
 		void send_command(Command const& command, int fd);

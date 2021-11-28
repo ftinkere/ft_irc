@@ -8,6 +8,7 @@
 //#include "Client.hpp"
 //#include "ListenSocket.hpp"
 //#include "Channel.hpp"
+#include  <typeinfo> 
 
 namespace IRC {
 
@@ -537,6 +538,7 @@ namespace IRC {
 
     void cmd_kick(Command const &cmd, Client &client, ListenSocket &server)
     {
+        //TODO: что то сделать с комментом надо
         std::vector<std::string> const &params = cmd.getParams(); //параметры
         std::vector<std::string> chans;
         std::vector<std::string> nicks;
@@ -623,19 +625,94 @@ namespace IRC {
 
     void cmd_mode(Command const &cmd, Client &client, ListenSocket &server)
     {
+        //добавить выводи режимов на экран
+        void* buf;
         std::vector<std::string> const &params = cmd.getParams(); //параметры
 //        std::vector<std::string> chans;
 //        std::vector<std::string> nicks;
-        if (!params.empty() || params.size() < 2) {
+        if (!params.empty()) {
             sendError(client, server, ERR_NEEDMOREPARAMS, "MODE", "");
             return;
         }
-        if (server.channels.find(params[0]) == server.channels.end())
-        {
-            sendError(client, server, ERR_NOSUCHCHANNEL, params[0], "");
+        buf = server.nick_or_channel(params[0], 0, client);
+        if (buf == NULL)
             return;
+        Channel channel = (Channel)buf;
+        Client oclient = (Client)buf;
+        
+        if (channel == nullptr)
+        {
+            std::string models = "iwo";
+            char mod = params[1][1];
+            if (params[1].size() != 2 || models.find(params[1][1]) == std::string::npos)
+            {
+                sendError(client, server, ERR_UMODEUNKNOWNFLAG, "", "");//если не подходит мод
+                return;
+            }
+            char sign = params[1][0];
+            char mod = params[1][1];
+            if (sign != '-' && sign != '+')
+            {
+                sendError(client, server, ERR_UMODEUNKNOWNFLAG, "", "");//если не подходит мод
+                return;
+            }
+            if (client.getFlags() & UMODE_NOPER)
+            {
+                if (mod == 'i')
+                {
+                    if (sign == '+')
+                        oclient.setFlag(UMODE_INVIS);
+                    else
+                        oclient.zeroFlag(UMODE_INVIS);
+                }
+                else if (mod == 'w')
+                {
+                    if (sign == '+')
+                        oclient.setFlag(UMODE_WALLOPS);
+                    else
+                        oclient.zeroFlag(UMODE_WALLOPS);
+                }
+                else if (mod == 'o')
+                {
+                    if (sign == '+')
+                        oclient.setFlag(UMODE_NOPER);
+                    else
+                        oclient.zeroFlag(UMODE_NOPER);
+                }
+            }
+            else{
+                if (mod == 'i')
+                {
+                    if (sign == '+')
+                        oclient.setFlag(UMODE_INVIS);
+                    else
+                        oclient.zeroFlag(UMODE_INVIS);
+                }
+                else if (mod == 'w')
+                {
+                    if (sign == '+')
+                        oclient.setFlag(UMODE_WALLOPS);
+                    else
+                        oclient.zeroFlag(UMODE_WALLOPS);
+                }
+                else if (mod == 'o')
+                {
+                    if (sign == '+'){
+                        sendError(client, server, ERR_USERSDONTMATCH, "", "");//если не опер то не можешь редактировать чужой ник
+                        return ;
+                    }
+                    else
+                        oclient.zeroFlag(UMODE_NOPER);
+                }
+            }
         }
-        Channel channel = server.channels.find(params[0])->second;
+        //noc
+        // if (server.channels.find(params[0]) == server.channels.end())
+        // {
+        //     sendError(client, server, ERR_NOSUCHCHANNEL, params[0], "");
+        //     return;
+        // }
+        // Channel channel = server.channels.find(params[0])->second;
         if (channel.opers.find(&client.getNick()) == channel.opers.end())
         {
             sendError(client, server, ERR_CHANOPRIVSNEEDED, params[0], "");//если нет привелегий
@@ -813,6 +890,81 @@ namespace IRC {
 
 
         }
+    }
+
+    void cmd_oper(Command const &cmd, Client &client, ListenSocket &server)
+    {
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
+        std::vector<std::string> pass;
+//        std::vector<std::string> keys;
+        int res;
+        int count = 0;
+
+        if (params.empty() || params.size() != 2){
+            sendError(client, server, ERR_NEEDMOREPARAMS, "OPER", "");
+            return;
+        }
+        if (server.opers.empty()) { //если мапа пустая значит оперов не может быть
+            sendError(client, server, ERR_NOOPERHOST, "", "");
+            return;
+        }
+        pass = server.oper.find(params[0]);
+        if (pass == server.oper.end() || pass != params[1])
+        {
+            sendError(client, server, ERR_PASSWDMISMATCH, "", "");
+            return;
+        }
+        sendReply(server.getServername(), client, RPL_YOUREOPER, "", "", "", "", "", "", "", "");
+        if (!client.getFlags() & UMODE_NOPER)
+            client.setFlag(UMODE_NOPER);
+    }
+
+    void cmd_kill(Command const &cmd, Client &client, ListenSocket &server)
+    {
+        //TODO: что то сделать с комментом надо
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
+        std::vector<std::string> pass;
+        int res;
+        int count = 0;
+
+        if (params.empty() || params.size() != 2){
+            sendError(client, server, ERR_NEEDMOREPARAMS, "KILL", "");
+            return;
+        
+        if (!client.getFlags() & UMODE_NOPER)
+        {
+            sendError(client, server, ERR_NOPRIVILEGES, "", "");
+            return;
+        }
+        std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
+                                                              is_nickname(params[0]));
+        if (to == server.clients.end()) {
+            sendError(client, server, ERR_NOSUCHNICK, params[0], "");
+            return;
+        }
+        if (params[0] == server.getServername())
+        {
+            sendError(client, server, ERR_CANTKILLSERVER, "", "");
+            return;
+        }
+        server.quit_client((*to).getFd());
+    }
+
+    void cmd_admin(Command const &cmd, Client &client, ListenSocket &server)
+    {
+        std::vector<std::string> params = cmd.getParams(); //параметры
+
+        if (params.empty())
+            params[0] = server.getServername();
+        if (params[0] != server.getServername())
+        {
+            sendError(client, server, ERR_NOSUCHSERVER, params[0], "");
+            return;
+        }
+        sendReply(server.getServername(), client, RPL_ADMINME, params[0], "", "", "", "", "", "", "");
+        sendReply(server.getServername(), client, RPL_ADMINLOC1, server.admin["adminName"], "", "", "", "", "", "", "");
+        sendReply(server.getServername(), client, RPL_ADMINLOC2, server.admin["adminNickname"], "", "", "", "", "", "", "");
+        sendReply(server.getServername(), client, RPL_ADMINEMAIL, server.admin["adminEmail"], "", "", "", "", "", "", "");     
     }
 }
 

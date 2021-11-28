@@ -45,6 +45,7 @@ namespace IRC {
 		// 0b00000001 // flags
 		// 0b00000010 // flag
 		void setFlag(int flag) { flags = flags | flag; }
+		void zeroFlag(int flag) { flags &= ~flag; }
 		// if (getFlags() & UMODE_REGISTERED)
 		int getFlags() const { return flags; }
 		const std::string &getNick() const { return nick; }

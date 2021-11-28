@@ -47,6 +47,8 @@ namespace IRC{
         commands[CMD_KICK] = &cmd_kick;
         commands[CMD_MODE] = &cmd_mode;
         commands[CMD_OPER] = &cmd_oper;
+		commands[CMD_KILL] = &cmd_kill;
+		commands[CMD_ADMIN] = &cmd_admin;
         Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
         Channel::modes.insert(std::make_pair(INVIT, Channel::I));
         Channel::modes.insert(std::make_pair(MODES, Channel::M));
@@ -95,6 +97,9 @@ namespace IRC{
                 opers = get_config("operators.conf");
             }
         }
+		admin.insert(std::make_pair("adminName", configs["adminName"]));
+		admin.insert(std::make_pair("adminNickname", configs["adminNickname"]));
+		admin.insert(std::make_pair("adminEmail", configs["adminEmail"]));
 		std::cout << "[DEBUG]: servername set to " << this->servername << std::endl;
 	}
 

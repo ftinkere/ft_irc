@@ -5,15 +5,17 @@
 #include <vector>
 #include <list>
 #include "Socket.hpp"
-#include "Client.hpp"
-#include "Command.hpp"
-#include "Channel.hpp"
+//#include "Command.hpp"
+//#include "Channel.hpp"
+#include "commands.hpp"
 
 #define WITMSG -1
 
 #define BUFFER_SIZE 513
 
 namespace IRC {
+    class Channel;
+    class Command;
     class ListenSocket : public Socket
     {
     public:
@@ -27,6 +29,8 @@ namespace IRC {
 		typedef void (*cmd)(Command const&, Client&, ListenSocket&);
 		std::list<Client> clients;
 		std::map<std::string, Channel> channels;
+		std::map<std::string, std::string> opers;
+		std::map<std::string, std::string> admin;
     private:
 
 		fd_set read_fds;

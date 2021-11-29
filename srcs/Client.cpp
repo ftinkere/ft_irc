@@ -2,7 +2,7 @@
 // Created by Frey Tinkerer on 11/11/21.
 //
 
-#include <ListenSocket.hpp>
+//#include <ListenSocket.hpp>
 #include "Client.hpp"
 
 IRC::is_nickname_s IRC::is_nickname(std::string nickname) {
@@ -74,4 +74,9 @@ bool IRC::Client::_name_control(std::string const& prefix, int v)
 
 std::string IRC::Client::get_full_name() const {
 	return std::string(this->nick + "!" + this->user + "@" + this->host);
+}
+
+void IRC::Client::eraseChannel(std::string &flag) //удаляем канал из списка пользователя
+{
+	channels.remove(flag);
 }

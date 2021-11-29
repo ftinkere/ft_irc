@@ -6,6 +6,8 @@
 #define FT_IRC_CLIENT_HPP
 
 #include <string>
+#include <list>
+#include "commands.hpp"
 
 #define UMODE_REGISTERED 0x01 // +r
 #define UMODE_NOPER 0x02      // +o
@@ -15,7 +17,7 @@
 namespace IRC {
 
 	class ListenSocket;
-	class Command;
+//	class Command;
 
 	class Client {
 	private:
@@ -24,6 +26,7 @@ namespace IRC {
 //		std::string user;
 		int fd;
 		int flags;
+		std::list<std::string> channels;
 
 	public:
 		std::string pass;
@@ -43,18 +46,30 @@ namespace IRC {
 		// 0b00000001 // flags
 		// 0b00000010 // flag
 		void setFlag(int flag) { flags = flags | flag; }
+		void zeroFlag(int flag) { flags &= ~flag; }
 		// if (getFlags() & UMODE_REGISTERED)
 		int getFlags() const { return flags; }
+		int isFlag(int flag) const { return flags & flag; }
+
 		const std::string &getNick() const { return nick; }
 		void setNick(const std::string &nick) { Client::nick = nick; }
+
 		const std::string &getUser() const { return user; }
-		void setAway(const std::string &msg) { Client::away = msg; }
-		void clearAway() { Client::away.clear(); }
-		const std::string &getAway() const { return away; }
 		void setUser(const std::string &user) { Client::user = user; }
+
+		void setAway(const std::string &msg) { Client::away = msg; }
+		const std::string &getAway() const { return away; }
+		void clearAway() { Client::away.clear(); }
+
+		std::list<std::string> getChannels() { return channels; }
+		void setChannels(std::string &flag) { channels.push_back(flag); }
+		void eraseChannel(std::string &flag);
+
 		int getFd() const { return fd; }
+
 		bool _name_control(std::string const& prefix, int v);
 		std::string get_full_name() const;
+
 	};
 
 	struct is_nickname_s {
@@ -73,9 +88,18 @@ namespace IRC {
 		bool operator()(Client const& c) const { return fd == c.getFd(); }
 	};
 
+	struct is_flag_s {
+		int flag;
+
+		explicit is_flag_s(int flag) : flag(flag) {};
+
+		bool operator()(Client const& c) const { return c.isFlag(flag); }
+	};
+
 	// find_if(.., .., is_nickname("nick"));
 	is_nickname_s is_nickname(std::string nickname);
 	is_fd_s is_fd(int fd);
+	is_flag_s is_flag(int flag);
 
 
 

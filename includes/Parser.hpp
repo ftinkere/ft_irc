@@ -32,22 +32,22 @@ namespace IRC {
 #define CMD_PRIVMSG "PRIVMSG"
 #define CMD_NOTICE "NOTICE"
 
-#define CMD_WHO "WHO"
-#define CMD_WHOIS "WHOIS"
-#define CMD_WHOWAS "WHOWAS"
+//#define CMD_WHO "WHO"
+//#define CMD_WHOIS "WHOIS"
+//#define CMD_WHOWAS "WHOWAS"
 
 #define CMD_KILL "KILL"
 #define CMD_PING "PING"
 #define CMD_PONG "PONG"
 
-#define CMD_VERSION "VERSION"
-#define CMD_TIME "TIME"
+//#define CMD_VERSION "VERSION"
+//#define CMD_TIME "TIME"
 #define CMD_ADMIN "ADMIN"
-#define CMD_INFO "INFO"
+//#define CMD_INFO "INFO"
 
 #define CMD_AWAY "AWAY"
-#define CMD_REHASH "REHASH"
-#define CMD_RESTART "RESTART"
+//#define CMD_REHASH "REHASH"
+//#define CMD_RESTART "RESTART"
 #define CMD_WALLOPS "WALLOPS"
 
 #define ERROR_ 1

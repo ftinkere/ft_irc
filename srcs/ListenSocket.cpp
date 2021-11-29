@@ -422,6 +422,37 @@ namespace IRC{
 		return ret;
 	}
 
+	Client* IRC::ListenSocket::thisisnick(const std::string &nick, int flag, Client& feedback)
+	{
+	    if (feedback.getNick() == nick)
+	        return &feedback;
+	    std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+	    if (it == this->clients.end()) {
+	        sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+	        return NULL;
+	    }
+	    if (feedback.getFlags() & UMODE_NOPER)
+	    {
+	        return &(*it);
+	    }
+	    else
+	    {
+	        sendError(feedback, *this, ERR_USERSDONTMATCH, "", "");//если не опер то не можешь редактировать чужой ник
+	        return NULL;
+	    }
+	}
+	Channel* IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client& feedback)
+	{
+	    std::map<std::string, Channel>::iterator it = channels.find(nick);
+	    if (it == channels.end())
+	    {
+	        sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+	        return (NULL);
+	    }
+	    return &(it->second);
+	}
+
+
 	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client & feedback) {
 		return find_clients(nick, 0, feedback);
 	}

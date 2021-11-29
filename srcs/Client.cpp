@@ -80,3 +80,7 @@ void IRC::Client::eraseChannel(std::string &flag) //удаляем канал и
 {
     channels.remove(flag);
 }
+
+IRC::Client::Client() {
+
+}

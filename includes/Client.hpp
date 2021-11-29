@@ -61,7 +61,9 @@ namespace IRC {
 		void setChannels(std::string &flag) { channels.push_back(flag); }
 		void eraseChannel(std::string &flag);
         std::list<std::string> getChannels()  { return channels; }
-	};
+
+        Client();
+    };
 
 	struct is_nickname_s {
 		std::string nickname;

@@ -73,10 +73,14 @@ bool IRC::Client::_name_control(std::string const& prefix, int v)
 }
 
 std::string IRC::Client::get_full_name() const {
-	return std::string(this->nick + "!" + this->user + "@" + this->host);
+    return std::string(this->nick + "!" + this->user + "@" + this->host);
 }
 
 void IRC::Client::eraseChannel(std::string &flag) //удаляем канал из списка пользователя
 {
-	channels.remove(flag);
+    channels.remove(flag);
+}
+
+IRC::Client::Client() {
+
 }

@@ -1,10 +1,6 @@
 #include <fstream>
 #include <sstream>
-#include <Parser.hpp>
 #include "ListenSocket.hpp"
-#include "Client.hpp"
-#include "Command.hpp"
-#include "commands.hpp"
 #include <set>
 
 namespace IRC{
@@ -414,6 +410,36 @@ sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
 
 	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
 		return find_clients(nick, 0, feedback);
+	}
+
+	Client* IRC::ListenSocket::thisisnick(const std::string &nick, int flag, Client& feedback)
+	{
+		if (feedback.getNick() == nick)
+			return &feedback;
+		std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+		if (it == this->clients.end()) {
+			sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+			return NULL;
+		}
+		if (feedback.getFlags() & UMODE_NOPER)
+		{
+			return &(*it);
+		}
+		else
+		{
+			sendError(feedback, *this, ERR_USERSDONTMATCH, "", "");//если не опер то не можешь редактировать чужой ник
+			return NULL;
+		}
+	}
+	Channel* IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client& feedback)
+	{
+		std::map<std::string, Channel>::iterator it = channels.find(nick);
+		if (it == channels.end())
+		{
+			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+			return (NULL);
+		}
+		return &(it->second);
 	}
 
 	void ListenSocket::send_command(const Command &command, const Client &client) {

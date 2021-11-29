@@ -1,26 +1,16 @@
 #include "Channel.hpp"
 
 namespace IRC {
-
+    std::map<const char, size_t> Channel::modes;
     Channel::Channel(std::string const& name) :
 		name(name),
-		flags(CMODE_NOEXT),
-		limit(0) {}
+		flags(CMODE_NOEXT | CMODE_MODER),
+		limit(0)
+        {}
 
     bool Channel::check_name(std::string const& name) {
         if (name[0] != '#')
             return false;
-        std::set<char> sim;
-        sim.insert('\r');
-        sim.insert('\n');
-        sim.insert(' ');
-        sim.insert('\0');
-        sim.insert(',');
-        for (int i = 0; i < name.length(); i++)
-        {
-            if (sim.find(name[i]) != sim.end())
-                return false;
-        }
         return true;
     }
 
@@ -50,10 +40,10 @@ namespace IRC {
 		for (std::set<std::string const*>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
 			ret += '@' + **it + ' ';
 		}
-		for (std::set<Client const*>::const_iterator it = users.begin(); it != users.end(); ++it) {
+		for (std::set<Client*>::const_iterator it = users.begin(); it != users.end(); ++it) {
 			if (opers.find(&(*it)->getNick()) == opers.end()) {
-				if (!(*it)->getFlags() & UMODE_INVIS) { //если ник видимый
-					ret += (*it)->getNick() + ' ';
+                if (!(*it)->isFlag(UMODE_INVIS)) { //если ник видимый
+				    ret += (*it)->getNick() + ' ';
 				}
 			}
 		}
@@ -63,33 +53,33 @@ namespace IRC {
 		return ret;
 	}
 
-	std::vector<std::string> &Channel::split(const std::string &s, char delim, std::vector<std::string> &elems)
-	{
-		std::stringstream ss(s);
-		std::string item;
-		while (std::getline(ss, item, delim))
-		{
-			elems.push_back(item);
-		}
-		return elems;
-	}
+    std::vector<std::string> &Channel::split(const std::string &s, char delim, std::vector<std::string> &elems)
+    {
+        std::stringstream ss(s);
+        std::string item;
+        while (std::getline(ss, item, delim))
+        {
+            elems.push_back(item);
+        }
+        return elems;
+    }
 
-	std::vector<std::string> Channel::split(const std::string &s, char delim)
-	{
-		std::vector<std::string> elems;
-		split(s, delim, elems);
-		return elems;
-	}
+    std::vector<std::string> Channel::split(const std::string &s, char delim)
+    {
+        std::vector<std::string> elems;
+        split(s, delim, elems);
+        return elems;
+    }
 
-	void Channel::erase_client(Client & cl)
-	{
-		voiced.erase(&cl.getNick());
-		opers.erase(&cl.getNick());
-		users.erase(&cl);
-	}
+    void Channel::erase_client(Client & cl)
+    {
+        voiced.erase(&cl.getNick());
+        opers.erase(&cl.getNick());
+        users.erase(&cl);
+    }
 
-	Channel::Channel() :
-			flags(CMODE_NOEXT),
-			limit(0) {}
+    Channel::Channel() :
+    flags(CMODE_NOEXT),
+    limit(0) {}
 
 }

@@ -37,6 +37,7 @@ namespace IRC {
 
 		time_t login_time;
 
+		Client();
 		Client(int fd) : fd(fd), flags(0) {}
 
 		virtual ~Client() {}
@@ -69,7 +70,6 @@ namespace IRC {
 
 		bool _name_control(std::string const& prefix, int v);
 		std::string get_full_name() const;
-
 	};
 
 	struct is_nickname_s {

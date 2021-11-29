@@ -3,10 +3,9 @@
 #include "ListenSocket.hpp"
 #include <set>
 
-namespace IRC{
+namespace IRC {
 
-	std::map<std::string, std::string> get_config(std::string filepath)
-	{
+	std::map<std::string, std::string> get_config(std::string filepath) {
 		std::string buf;
 		std::fstream conf;
 //		filepath = "feefef";
@@ -16,12 +15,10 @@ namespace IRC{
 			return confs;
 		}
 
-		while (!conf.eof())
-		{
+		while (!conf.eof()) {
 			std::getline(conf, buf);
 			std::size_t pos = buf.find('=');
-			if (pos != std::string::npos)
-			{
+			if (pos != std::string::npos) {
 				std::string s1 = buf.substr(0, pos);
 				std::string s2 = buf.substr(pos + 1);
 				confs.insert(std::pair<std::string, std::string>(s1, s2));
@@ -30,7 +27,7 @@ namespace IRC{
 		return (confs);
 	}
 
-	ListenSocket::ListenSocket(const char* port) : Socket(port), servername(""), password("") {
+	ListenSocket::ListenSocket(const char *port) : Socket(port), servername(""), password("") {
 		commands[CMD_PASS] = &cmd_pass;
 		commands[CMD_NICK] = &cmd_nick;
 		commands[CMD_USER] = &cmd_user;
@@ -38,27 +35,27 @@ namespace IRC{
 		commands[CMD_PRIVMSG] = &cmd_privmsg;
 		commands[CMD_NOTICE] = &cmd_notice;
 		commands[CMD_AWAY] = &cmd_away;
-        commands[CMD_JOIN] = &cmd_join;
+		commands[CMD_JOIN] = &cmd_join;
 		commands[CMD_PART] = &cmd_part;
 		commands[CMD_TOPIC] = &cmd_topic;
 		commands[CMD_NAMES] = &cmd_names;
-        commands[CMD_LIST] = &cmd_list;
-        commands[CMD_INVITE] = &cmd_invite;
-        commands[CMD_KICK] = &cmd_kick;
-        commands[CMD_MODE] = &cmd_mode;
-        commands[CMD_OPER] = &cmd_oper;
+		commands[CMD_LIST] = &cmd_list;
+		commands[CMD_INVITE] = &cmd_invite;
+		commands[CMD_KICK] = &cmd_kick;
+		commands[CMD_MODE] = &cmd_mode;
+		commands[CMD_OPER] = &cmd_oper;
 		commands[CMD_KILL] = &cmd_kill;
 		commands[CMD_ADMIN] = &cmd_admin;
-        Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
-        Channel::modes.insert(std::make_pair(INVIT, Channel::I));
-        Channel::modes.insert(std::make_pair(MODES, Channel::M));
-        Channel::modes.insert(std::make_pair(SECRET, Channel::S));
-        Channel::modes.insert(std::make_pair(SPEAK, Channel::N)); //это все для более быстрого поиска модов
-        Channel::modes.insert(std::make_pair(OPER, Channel::O));
-        Channel::modes.insert(std::make_pair(VOICER, Channel::V));
-        Channel::modes.insert(std::make_pair(KEY, Channel::K));
-        Channel::modes.insert(std::make_pair(LEN, Channel::L));
-        //frfgrg
+		Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
+		Channel::modes.insert(std::make_pair(INVIT, Channel::I));
+		Channel::modes.insert(std::make_pair(MODES, Channel::M));
+		Channel::modes.insert(std::make_pair(SECRET, Channel::S));
+		Channel::modes.insert(std::make_pair(SPEAK, Channel::N)); //это все для более быстрого поиска модов
+		Channel::modes.insert(std::make_pair(OPER, Channel::O));
+		Channel::modes.insert(std::make_pair(VOICER, Channel::V));
+		Channel::modes.insert(std::make_pair(KEY, Channel::K));
+		Channel::modes.insert(std::make_pair(LEN, Channel::L));
+		//frfgrg
 	}
 
 	void ListenSocket::execute() {
@@ -66,7 +63,7 @@ namespace IRC{
 //        this->fd_max = Socket::fd_max;
 //        this->master = Socket::master;
 //        base = new SUBD();
-		while(1) {
+		while (1) {
 			read_fds = master; // копируем его
 			struct timeval timeout = {
 					.tv_sec = 1,
@@ -79,24 +76,22 @@ namespace IRC{
 		}
 	}
 
-	void ListenSocket::configure(std::string const& path) {
+	void ListenSocket::configure(std::string const &path) {
 		std::map<std::string, std::string> configs = get_config(path);
 		if (configs.find("servername") != configs.end()) {
 			this->servername = configs["servername"];
 		} else {
-			char name [1024];
+			char name[1024];
 			name[1023] = '\0';
 			gethostname(name, 1023);
 			this->servername = name;
 		}
-        std::map<std::string, std::string>::iterator it = configs.find("operators");
-        if (it != configs.end())
-        {
-            if (it->second == "yes")
-            {
-                opers = get_config("operators.conf");
-            }
-        }
+		std::map<std::string, std::string>::iterator it = configs.find("operators");
+		if (it != configs.end()) {
+			if (it->second == "yes") {
+				opers = get_config("operators.conf");
+			}
+		}
 		admin.insert(std::make_pair("adminName", configs["adminName"]));
 		admin.insert(std::make_pair("adminNickname", configs["adminNickname"]));
 		admin.insert(std::make_pair("adminEmail", configs["adminEmail"]));
@@ -136,50 +131,45 @@ namespace IRC{
 //        return collection;
 //	}
 
-	char* ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr)
-    {
-        return (inet_ntoa(get_in_addr((struct sockaddr*)&remoteaddr)));
-    }
+	char *ListenSocket::recieve_ip(struct sockaddr_storage &remoteaddr) {
+		return (inet_ntoa(get_in_addr((struct sockaddr *) &remoteaddr)));
+	}
 
-    in_addr &ListenSocket::get_in_addr(struct sockaddr *sa)
-    {
-        return ((struct sockaddr_in*)sa)->sin_addr;
-    }
+	in_addr &ListenSocket::get_in_addr(struct sockaddr *sa) {
+		return ((struct sockaddr_in *) sa)->sin_addr;
+	}
 
-    void ListenSocket::new_client()
-    {
+	void ListenSocket::new_client() {
 		char *ipv4;
 		socklen_t addrlen;
-        struct sockaddr_storage remoteaddr;
+		struct sockaddr_storage remoteaddr;
 
-        addrlen = sizeof remoteaddr;
-        int fd_new = accept(listener,
-                            (struct sockaddr *)&remoteaddr,
-                            &addrlen);
-        if (fd_new == -1) {
-            std::cerr << "Error Accept" << std::endl;
-        }
-        else
-        {
+		addrlen = sizeof remoteaddr;
+		int fd_new = accept(listener,
+							(struct sockaddr *) &remoteaddr,
+							&addrlen);
+		if (fd_new == -1) {
+			std::cerr << "Error Accept" << std::endl;
+		} else {
 //			std::cout << "Debug" << std::endl;
-            FD_SET(fd_new, &master); // добавляем в мастер-сет
-            if (fd_new > fd_max) {    // продолжаем отслеживать самый большой номер дескиптора
-                fd_max = fd_new;
-            }
-            ipv4 = recieve_ip(remoteaddr);
-            std::cout   <<  "New connection from "
-                        <<  ipv4
-                        <<  " on socket "
-                        <<  fd_new
-                        <<  std::endl;
-            this->clients.push_back(Client(fd_new));
+			FD_SET(fd_new, &master); // добавляем в мастер-сет
+			if (fd_new > fd_max) {    // продолжаем отслеживать самый большой номер дескиптора
+				fd_max = fd_new;
+			}
+			ipv4 = recieve_ip(remoteaddr);
+			std::cout << "New connection from "
+					  << ipv4
+					  << " on socket "
+					  << fd_new
+					  << std::endl;
+			this->clients.push_back(Client(fd_new));
 
 			struct sockaddr_in sa;
 			inet_pton(AF_INET, ipv4, &sa.sin_addr); // check
 			sa.sin_family = AF_INET;
 
 			char node[NI_MAXHOST];
-			memset(node,0, NI_MAXHOST);
+			memset(node, 0, NI_MAXHOST);
 			int res = getnameinfo(reinterpret_cast<const sockaddr *>(&sa), sizeof(sa), node, sizeof(node), NULL, 0, 0);
 			// TODO: errs
 //			std::cout << "[DEBUG]: " << node << std::endl;
@@ -200,30 +190,24 @@ namespace IRC{
 //            base->base_fd.insert(base->val);
 //            base->base_fd[4].fds = 45;
 //            base->base_nick.insert(base->val);
-        }
-    }
+		}
+	}
 
-    void ListenSocket::handle_chat(int const& i)
-    {
+	void ListenSocket::handle_chat(int const &i) {
 		char buf[BUFFER_SIZE];
-        int nbytes;
-        if ((nbytes = recv(i, buf, sizeof buf - 1, 0)) <= 0)
-        {// получена ошибка или соединение закрыто клиентом
-            if (nbytes == 0) {
-                // соединение закрыто
-                printf("selectserver: socket %d hung up\n", i);
-            }
-            else
-            {
-                std::cerr << "Error recieve" << std::endl;
-            }
+		int nbytes;
+		if ((nbytes = recv(i, buf, sizeof buf - 1, 0)) <= 0) {// получена ошибка или соединение закрыто клиентом
+			if (nbytes == 0) {
+				// соединение закрыто
+				printf("selectserver: socket %d hung up\n", i);
+			} else {
+				std::cerr << "Error recieve" << std::endl;
+			}
 //			clients.erase(std::find_if(clients.begin(), clients.end(), is_fd(i)));
 //            close(i); // bye!
 //            FD_CLR(i, &master); // удаляем из мастер-сета
 			quit_client(i);
-        }
-        else
-        {// у нас есть какие-то данные от клиента
+		} else {// у нас есть какие-то данные от клиента
 			// если fd нет, UB
 			buf[nbytes] = '\0';
 			std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(i));
@@ -245,8 +229,8 @@ namespace IRC{
 //                    }
 //                }
 //            }
-        }
-    }
+		}
+	}
 
 	int ListenSocket::handle_message(const char *buf, Client *client) {
 		if (client->getNick().empty()) {
@@ -263,24 +247,23 @@ namespace IRC{
 	}
 
 	void ListenSocket::check_connections() {
-        socklen_t addrlen;
-        struct sockaddr_storage remoteaddr;
+		socklen_t addrlen;
+		struct sockaddr_storage remoteaddr;
 
-		if (FD_ISSET(listener, &read_fds))
-		{// обрабатываем новые соединения
+		if (FD_ISSET(listener, &read_fds)) {// обрабатываем новые соединения
 			new_client();
 		}
 
 		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
 			if (!(it->getFlags() & UMODE_REGISTERED)
-					&& it->login_time + this->registration_timeout - time(NULL) <= 0) {
+				&& it->login_time + this->registration_timeout - time(NULL) <= 0) {
 				// reply timeout
-			{
-				Command cmd("ERROR");
-				cmd << "Registration timeout";
-				send_command(cmd, it->getFd());
-			}
+				{
+					Command cmd("ERROR");
+					cmd << "Registration timeout";
+					send_command(cmd, it->getFd());
+				}
 				quit_client(it->getFd());
 				break;
 			}
@@ -290,7 +273,7 @@ namespace IRC{
 		}
 
 //        int listener = Socket::getListener();
-        // проходим через существующие соединения, ищем данные для чтения
+		// проходим через существующие соединения, ищем данные для чтения
 //        for(int i = 0; i <= fd_max; i++) {
 //            if (FD_ISSET(i, &read_fds))
 //            { // есть!
@@ -304,22 +287,21 @@ namespace IRC{
 //                } // Закончили обрабатывать данные от клиента
 //            } // Закончили обрабатывать новое входящее соединение
 //        } // Закончили цикл по дескрипторам
-    }
+	}
 
-    // ListenSocket::SUBD::SUBD() 
-    // {
-    //     cl = new client();
-    // }
+	// ListenSocket::SUBD::SUBD()
+	// {
+	//     cl = new client();
+	// }
 
-    // ListenSocket::SUBD::~SUBD() 
-    // {
-    //     delete cl;
-    // }
+	// ListenSocket::SUBD::~SUBD()
+	// {
+	//     delete cl;
+	// }
 
-    ListenSocket::~ListenSocket()
-    {
+	ListenSocket::~ListenSocket() {
 //        delete base;
-    }
+	}
 
 	void ListenSocket::set_password(const std::string &password) {
 		this->password = password;
@@ -327,11 +309,9 @@ namespace IRC{
 
 	void ListenSocket::quit_client(int fd) {
 		std::list<Client>::iterator cl = std::find_if(clients.begin(), clients.end(), is_fd(fd));
-        Client client = *cl;
-		for(std::list<std::string>::iterator it = client.getChannels().begin(); it != client.getChannels().end(); ++it)
-		{
-            std::string can = *it;
-			channels[can].erase_client(*cl); //удаляем из всех групп
+		for (std::list<std::string>::iterator it = cl->getChannels().begin();
+			 it != cl->getChannels().end(); ++it) {
+			channels[*it].erase_client(*cl); //удаляем из всех групп
 		}
 		clients.erase(cl);
 		close(fd); // bye!
@@ -339,66 +319,72 @@ namespace IRC{
 	}
 
 	const std::list<Client> &ListenSocket::getClients() const { return clients; }
+
 	const fd_set &ListenSocket::getReadFds() const { return read_fds; }
+
 	const std::string &ListenSocket::getServername() const { return servername; }
+
 	const std::string &ListenSocket::getPassword() const { return password; }
+
 	const std::map<std::string, ListenSocket::cmd> &ListenSocket::getCommands() const { return commands; }
 
-	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client const& feedback) {
-		std::vector<Client*> ret;
+	std::vector<Client *> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client const &feedback) {
+		std::vector<Client *> ret;
 
 		if (nick[0] == '#') {
 			// find in channel
 			if (channels.find(nick) != channels.end()) {
-				Channel chan = channels[nick];
-				if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&feedback) != chan.users.end())//если есть +n или клиент состоит в группе {
+				Channel &chan = channels[nick];
+				if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&const_cast<Client &>(feedback)) !=
+												chan.users.end()) { //если есть +n или клиент состоит в группе
 					if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
 						for (std::set<Client *>::iterator it = chan.users.begin(); it != chan.users.end(); ++it) {
-							Client *client = *it;
-							ret.push_back(client);
+//							Client *client = *it;
+							ret.push_back(*it);
+						}
+					} else if (flag != -1) {
+						sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
+					}
+				} else if (flag != -1) {
+					sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
+				}
+			} else if (flag != -1) {
+					sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+				}
+				//обработать +m
+		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
+			// find opers in channel
+			std::string nick1 = nick.substr(1);
+			if (channels.find(nick1) != channels.end()) {
+				Channel &chan = channels[nick1];
+				if (chan.isFlag(CMODE_NOEXT) || (chan.users.find(&const_cast<Client &>(feedback)) != chan.users.end()))
+					//если есть +n или клиент состоит в группе
+				{
+					if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
+						std::set<std::string const *>::iterator it = chan.opers.begin();//берем всех оперов
+						for (; it != chan.opers.end(); ++it) {
+							std::list<Client>::iterator to = std::find_if(clients.begin(),
+																		  clients.end(),
+																		  is_nickname(**it));
+							ret.push_back(&(*to));
 						}
 					} else {
 						if (flag != -1)
-							sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
+							sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick1, "");
 					}
-			} else if (flag != 0) {
-				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
-			}
-			//обработать +m
-		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
-			// find opers in channel
-	if (channels.find(nick) != channels.end())
-{
-	Channel chan = channels[nick];
-	if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&feedback) != chan.users.end())//если есть +n или клиент состоит в группе
-{
-	if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
-	std::set<std::string const *>::iterator it = chan.opers.begin();//берем всех оперов
-	for (; it != chan.opers.end(); ++it) {
-	std::string io = reinterpret_cast<const char *>(*it);
-	std::list<Client>::const_iterator to = std::find_if(getClients().begin(),
-														getClients().end(), is_nickname(io));
-	Client client = *to;
-	ret.push_back(&client);
-}
-} else{
-if (flag != -1)
-sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
-}
-}
-else
-{
-if (flag != -1)
-sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
-}
-} else if (flag != 0) {
-				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
+				} else {
+					if (flag != -1)
+						sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick1, "");
+				}
+			} else if (flag != -1) {
+				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick1, "");
 			}
 		} else {
 			// find nick
-			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(),
+														  is_nickname(nick));
 			if (it == this->clients.end()) {
-				if (flag != 0) {
+				if (flag != -1) {
 					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
 				}
 			} else {
@@ -408,34 +394,34 @@ sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
 		return ret;
 	}
 
-	std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
+	std::vector<Client *> ListenSocket::find_clients(const std::string &nick, const Client &feedback) {
+//		std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
+//		std::vector<Client *> IRC::ListenSocket::find_clients(const std::string &nick, Client const &feedback) {
 		return find_clients(nick, 0, feedback);
 	}
 
-	Client* IRC::ListenSocket::thisisnick(const std::string &nick, int flag, Client& feedback)
-	{
+
+	Client *IRC::ListenSocket::thisisnick(const std::string &nick, int flag, Client &feedback) {
 		if (feedback.getNick() == nick)
 			return &feedback;
-		std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(), is_nickname(nick));
+		std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(),
+													  is_nickname(nick));
 		if (it == this->clients.end()) {
 			sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
 			return NULL;
 		}
-		if (feedback.getFlags() & UMODE_NOPER)
-		{
+		if (feedback.getFlags() & UMODE_NOPER) {
 			return &(*it);
-		}
-		else
-		{
-			sendError(feedback, *this, ERR_USERSDONTMATCH, "", "");//если не опер то не можешь редактировать чужой ник
+		} else {
+			sendError(feedback, *this, ERR_USERSDONTMATCH, "",
+					  "");//если не опер то не можешь редактировать чужой ник
 			return NULL;
 		}
 	}
-	Channel* IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client& feedback)
-	{
+
+	Channel *IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client &feedback) {
 		std::map<std::string, Channel>::iterator it = channels.find(nick);
-		if (it == channels.end())
-		{
+		if (it == channels.end()) {
 			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
 			return (NULL);
 		}
@@ -447,7 +433,8 @@ sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
 	}
 
 	void ListenSocket::send_command(const Command &command, const std::string &nickname) {
-		std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(), is_nickname(nickname));
+		std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(),
+															is_nickname(nickname));
 		if (to != getClients().end()) {
 			send_command(command, to->getFd());
 		}
@@ -460,3 +447,4 @@ sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
 
 
 }
+

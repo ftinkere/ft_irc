@@ -36,7 +36,7 @@ namespace IRC{
 		std::string	password;
 		int			limit;
 
-		std::set<Client const*>			users;
+		std::set<Client *>			users;
 		std::set<std::string const*>	voiced;
 		std::set<std::string const*>	opers;
 

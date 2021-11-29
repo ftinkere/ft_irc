@@ -62,9 +62,9 @@ namespace IRC {
 		const std::string &getAway() const { return away; }
 		void clearAway() { Client::away.clear(); }
 
-		std::list<std::string> getChannels() { return channels; }
-		void setChannels(std::string &flag) { channels.push_back(flag); }
-		void eraseChannel(std::string &flag);
+		std::list<std::string> &getChannels() { return channels; }
+		void setChannels(std::string const& flag) { channels.push_back(flag); }
+		void eraseChannel(std::string const& flag);
 
 		int getFd() const { return fd; }
 

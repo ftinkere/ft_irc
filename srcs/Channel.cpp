@@ -21,7 +21,7 @@ namespace IRC {
 			opers.insert(&member.getNick());
             voiced.insert(&member.getNick());
 		}
-		users.insert(&member);
+		users.insert(&const_cast<Client&>(member));
 	}
 
     bool Channel::check_limit()

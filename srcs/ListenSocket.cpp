@@ -46,6 +46,7 @@ namespace IRC {
 		commands[CMD_OPER] = &cmd_oper;
 		commands[CMD_KILL] = &cmd_kill;
 		commands[CMD_ADMIN] = &cmd_admin;
+		commands[CMD_WHOIS] = &cmd_whois;
 		Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
 		Channel::modes.insert(std::make_pair(INVIT, Channel::I));
 		Channel::modes.insert(std::make_pair(MODES, Channel::M));
@@ -407,14 +408,17 @@ namespace IRC {
 		std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(),
 													  is_nickname(nick));
 		if (it == this->clients.end()) {
-			sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+			sendError(feedback, *this, ERR_NOSUCHNICK, nick);
 			return NULL;
 		}
 		if (feedback.getFlags() & UMODE_NOPER) {
 			return &(*it);
 		} else {
-			sendError(feedback, *this, ERR_USERSDONTMATCH, "",
-					  "");//если не опер то не можешь редактировать чужой ник
+			if ((*it).isFlag(UMODE_INVIS)){
+				sendError(feedback, *this, ERR_NOSUCHNICK, nick);
+				return NULL;
+			}
+			sendError(feedback, *this, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
 			return NULL;
 		}
 	}

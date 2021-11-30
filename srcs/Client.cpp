@@ -32,6 +32,9 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	sendReply(server.getServername(), *this, RPL_MOTD, "Welcome! Ли сахлии-гар!", "", "", "", "", "", "", "");
 	sendReply(server.getServername(), *this, RPL_ENDOFMOTD, "", "", "", "", "", "", "", "");
 
+    Client buf = *this;
+
+    server.base_client.push_back(buf);//создаем неизменяемую базу клиентов 
 	return true;
 }
 

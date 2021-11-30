@@ -52,6 +52,8 @@ namespace IRC {
 		int getFlags() const { return flags; }
 		int isFlag(int flag) const { return flags & flag; }
 
+		const std::string &getHost() const { return host; }
+
 		const std::string &getNick() const { return nick; }
 		void setNick(const std::string &nick) { Client::nick = nick; }
 

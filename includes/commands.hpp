@@ -38,6 +38,7 @@ void cmd_names(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_oper(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_kill(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_admin(Command const &cmd, Client &client, ListenSocket &server);
+    void cmd_whois(Command const &cmd, Client &client, ListenSocket &server);
 
 }
 #endif //FT_IRC_COMMANDS_HPP

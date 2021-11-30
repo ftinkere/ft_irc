@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <algorithm>
 #include "Command.hpp"
 
 namespace IRC {
@@ -137,6 +138,7 @@ IRC::Command::Command(std::string const& message): valid(true) {
 		std::map<std::string, ListenSocket::cmd>::const_iterator it;
 		std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 		it = commands.find(command);
+		// TODO cmd not found
 		if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER))
 		{
 			it->second(*this, client, server);

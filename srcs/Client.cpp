@@ -17,20 +17,20 @@ IRC::is_fd_s IRC::is_fd(int fd) {
 bool IRC::Client::try_register(ListenSocket & server) {
 //	std::cout << "[DEBUG]: server password: " << server.getPassword() << std::endl;
 //	std::cout << "[DEBUG]: nick: " << this->nick << std::endl;
-	// TODO: если проблемы с паролем, выкинуть
+	// TODO: если повторная регистрация, игнорировать
 	if (this->nick.empty() || this->user.empty()) {
 		return false;
 	} else if (!server.getPassword().empty() && this->pass != server.getPassword()) {
-		// reply acces deni
+		// TODO: reply acces deni
 		server.quit_client(this->fd);
 		return false;
 	}
 	setFlag(UMODE_REGISTERED);
 	std::cout << "[DEBUG]: " << this->nick << "!" << this->user << "@" << this->host << " are registered." << std::endl;
 
-	sendReply(server.getServername(), *this, RPL_MOTDSTART, server.getServername(), "", "", "", "", "", "", "");
-	sendReply(server.getServername(), *this, RPL_MOTD, "Welcome! Ли сахлии-гар!", "", "", "", "", "", "", "");
-	sendReply(server.getServername(), *this, RPL_ENDOFMOTD, "", "", "", "", "", "", "", "");
+	sendReply(server.getServername(), *this, RPL_MOTDSTART, server.getServername());
+	sendReply(server.getServername(), *this, RPL_MOTD, "Welcome! Ли сахлии-гар!");
+	sendReply(server.getServername(), *this, RPL_ENDOFMOTD);
 
 	return true;
 }

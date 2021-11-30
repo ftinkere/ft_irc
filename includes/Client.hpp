@@ -63,7 +63,7 @@ namespace IRC {
 		void clearAway() { Client::away.clear(); }
 
 		std::list<std::string> &getChannels() { return channels; }
-		void setChannels(std::string const& flag) { channels.push_back(flag); }
+		void addChannel(std::string const& flag) { channels.push_back(flag); }
 		void eraseChannel(std::string const& flag);
 
 		int getFd() const { return fd; }

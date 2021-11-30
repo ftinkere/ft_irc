@@ -64,7 +64,7 @@ namespace IRC{
 		void setTopic(const std::string & cl)  { topic = cl; }
 		void clearTopic()  { topic.clear(); }
 
-		void add_memeber(Client const& member);
+		void add_memeber(Client & member);
 		bool check_limit();
 
 		std::string get_names() const;

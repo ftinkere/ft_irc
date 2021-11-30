@@ -2,6 +2,7 @@
 // Created by Frey Tinkerer on 11/16/21.
 //
 
+#include <algorithm>
 #include "commands.hpp"
 //#include <Parser.hpp>
 //#include "Command.hpp"
@@ -54,6 +55,7 @@ namespace IRC {
 		} else if (client.getFlags() & UMODE_REGISTERED) {
 			sendError(client, server, ERR_ALREADYREGISTRED, "", "");
 		} else {
+			// TODO: realname
 			client.user = cmd.getParams()[0];
 			client.try_register(server);
 		} // else reply not args
@@ -87,12 +89,12 @@ namespace IRC {
 		}
 		for (int i = 0; i < clients.size(); ++i) { //отправляем
 			Command cmd(client.get_full_name(), CMD_PRIVMSG);
+			// TODO: fix to channel and list (#chan or user1,user2)
 			cmd << clients[i]->getNick() << msg;
 			server.send_command(cmd, clients[i]->getFd());
 //			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
 			if (!clients[i]->getAway().empty())
-				sendReply(server.getServername(), client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway(), "",
-						  "", "", "", "", ""); // TODO #chan
+				sendReply(server.getServername(), client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway());
 		}
 	}
 
@@ -126,13 +128,13 @@ namespace IRC {
 		std::vector<std::string> param = cmd.getParams(); //параметры
 		std::string msg;
 		if (param.empty()) {
-			sendReply(server.getServername(), client, RPL_UNAWAY, "", "", "", "", "", "", "", "");
+			sendReply(server.getServername(), client, RPL_UNAWAY);
 			client.clearAway();
 		} else {
 			for (int j = 0; j < param.size(); ++j) { //собираем параметры для отправки
-				msg += param[j];
+				msg += param[j] + " ";
 			}
-			sendReply(server.getServername(), client, RPL_NOWAWAY, "", "", "", "", "", "", "", "");
+			sendReply(server.getServername(), client, RPL_NOWAWAY);
 			client.setAway(msg);
 		}
 	}
@@ -206,6 +208,8 @@ namespace IRC {
 //                keys.push_back(params[i]);
 //            }
 //        }
+
+		// JOIN #c1,#c2,#c3,#c4 pass1,,pass3
 		for (unsigned int i = 0; i < chans.size(); ++i) {
 			if (!Channel::check_name(chans[i])) {
 				sendError(client, server, ERR_BADCHANMASK, chans[i], "");
@@ -232,10 +236,11 @@ namespace IRC {
 				continue;
 			}
 			chan.add_memeber(client);
-			client.setChannels(chans[i]);
+			client.addChannel(chans[i]);
 
-			sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], chan.get_names(), "", "", "", "", "", "");
-			sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i], "", "", "", "", "", "", "");
+			// TODO: topic
+			sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], chan.get_names());
+			sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i]);
 
 //            if (i < keys.size())
 //            {
@@ -308,6 +313,7 @@ namespace IRC {
 		std::vector<std::string> chans = Channel::split(params[0], ',');
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
+			// TODO: fix UB
 			Channel &channel = server.channels.find(chans[i])->second;
 			if (!Channel::check_name(chans[i])) {
 				sendError(client, server, ERR_NOSUCHCHANNEL, chans[i], "");
@@ -404,6 +410,8 @@ namespace IRC {
 		int res;
 		int count = 0;
 
+		// NAMES
+		// NAMES #c1,#c2
 		if (!params.empty()) {
 			chans = Channel::split(params[0], ',');
 		} else {//если нет каналов выводим все
@@ -414,6 +422,7 @@ namespace IRC {
 		}
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
+			// TODO: fix UB
 			Channel &channel = server.channels.find(chans[i])->second;
 			if (!Channel::check_name(chans[i])) {
 				continue;
@@ -425,9 +434,8 @@ namespace IRC {
 				continue;
 			}
 			//остановился здесь
-			sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], channel.get_names(), "", "", "", "", "",
-					  "");
-			sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i], "", "", "", "", "", "", "");
+			sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], channel.get_names());
+			sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i]);
 		}
 		if (count == 1)// если мы не выводили тзбранные каналы
 		{
@@ -460,7 +468,7 @@ namespace IRC {
 		}
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
-			Channel &channel = server.channels.find(chans[i])->second; // UB
+			Channel &channel = server.channels.find(chans[i])->second; // TODO: fix UB
 			if (!Channel::check_name(chans[i])) {
 				continue;
 			}
@@ -473,7 +481,9 @@ namespace IRC {
 			//остановился здесь
 //			if (count != 1)
 //				chans[i].clear();
-			sendReply(server.getServername(), client, RPL_LIST, chans[i], std::to_string(channel.users.size()), channel.getTopic());
+			std::stringstream ss;
+			ss << channel.users.size();
+			sendReply(server.getServername(), client, RPL_LIST, chans[i], ss.str(), channel.getTopic());
 
 		}
 		sendReply(server.getServername(), client, RPL_LISTEND);
@@ -511,15 +521,15 @@ namespace IRC {
 			sendError(client, server, ERR_USERONCHANNEL, params[0], params[1]);
 			return;
 		}
-		if (channel.opers.find(&client.getNick()) == channel.opers.end()) {
+		if (channel.isFlag(CMODE_INVITE) && channel.opers.find(&client.getNick()) == channel.opers.end()) {
 			sendError(client, server, ERR_CHANOPRIVSNEEDED, params[1], "");//если нет привелегий
 			return;
 		}
-		sendReply(server.getServername(), client, RPL_INVITING, params[1], params[0], "", "", "", "", "", "");
-		sendReply(server.getServername(), *it, RPL_AWAY, client.getNick(), "you were invited to the channel", "",
-				  "", "", "", "", "");
+		sendReply(server.getServername(), client, RPL_INVITING, params[1], params[0]);
+		// TODO: разобраться
+		sendReply(server.getServername(), *it, RPL_AWAY, client.getNick(), "you were invited to the channel");
 		channel.add_memeber(*it);
-		it->setChannels(const_cast<std::string &>(params[1]));
+		it->addChannel(params[1]);
 	}
 
 	void cmd_kick(Command const &cmd, Client &client, ListenSocket &server) {
@@ -532,6 +542,8 @@ namespace IRC {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "KICK", "");
 			return;
 		}
+		// KICK #c nick1,nick2
+		// KICK #c1,#c2, nick1,nick2
 		chans = Channel::split(params[0], ',');
 		nicks = Channel::split(params[1], ',');
 		size_t len = nicks.size();
@@ -546,6 +558,7 @@ namespace IRC {
 					sendError(client, server, ERR_NOTONCHANNEL, chans[0], "");
 					return;
 				}
+				// TODO: rights to server opers
 				if (channel.opers.find(&client.getNick()) == channel.opers.end()) {
 					sendError(client, server, ERR_CHANOPRIVSNEEDED, chans[0], "");//если нет привелегий
 					return;
@@ -597,6 +610,7 @@ namespace IRC {
 		return res;
 	}
 
+	// TODO: fix -l not enough params
 	void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {
 		//добавить выводи режимов на экран
 		std::vector<std::string> const &params = cmd.getParams(); //параметры
@@ -614,6 +628,7 @@ namespace IRC {
 				sendError(client, server, ERR_CHANOPRIVSNEEDED, params[0], "");//если нет привелегий
 				return;
 			}
+			// MODE #chan +l 2
 			std::map<const char, size_t>::iterator mod;
 			mod = Channel::modes.find(params[1][1]);
 			size_t res = mod->second;
@@ -689,6 +704,7 @@ namespace IRC {
 						return;
 					}
 					if (sign == '+') {
+						// TODO: rights
 						if (channel->opers.find(&nick) != channel->opers.end()) {
 							return;
 						} else {
@@ -784,7 +800,7 @@ namespace IRC {
 				sendError(client, server, ERR_UMODEUNKNOWNFLAG, "", "");//если не подходит мод
 				return;
 			}
-			if (client.getFlags() & UMODE_NOPER) {
+			if (client.isFlag(UMODE_NOPER)) {
 				if (mod == 'i') {
 					if (sign == '+')
 						oclient->setFlag(UMODE_INVIS);
@@ -818,7 +834,7 @@ namespace IRC {
 								  "");//если не опер то не можешь редактировать чужой ник
 						return;
 					} else
-						oclient->zeroFlag(UMODE_NOPER);
+						oclient->zeroFlag(UMODE_NOPER); // TODO: fix любой может лишить прав оператора
 				}
 			}
 		}
@@ -844,9 +860,8 @@ namespace IRC {
 			sendError(client, server, ERR_PASSWDMISMATCH, "", "");
 			return;
 		}
-		sendReply(server.getServername(), client, RPL_YOUREOPER, "", "", "", "", "", "", "", "");
-		if (!(client.getFlags() & UMODE_NOPER))
-			client.setFlag(UMODE_NOPER);
+		sendReply(server.getServername(), client, RPL_YOUREOPER);
+		client.setFlag(UMODE_NOPER);
 	}
 
 	void cmd_kill(Command const &cmd, Client &client, ListenSocket &server) {
@@ -887,11 +902,9 @@ namespace IRC {
 			sendError(client, server, ERR_NOSUCHSERVER, params[0], "");
 			return;
 		}
-		sendReply(server.getServername(), client, RPL_ADMINME, params[0], "", "", "", "", "", "", "");
-		sendReply(server.getServername(), client, RPL_ADMINLOC1, server.admin["adminName"], "", "", "", "", "", "", "");
-		sendReply(server.getServername(), client, RPL_ADMINLOC2, server.admin["adminNickname"], "", "", "", "", "", "",
-				  "");
-		sendReply(server.getServername(), client, RPL_ADMINEMAIL, server.admin["adminEmail"], "", "", "", "", "", "",
-				  "");
+		sendReply(server.getServername(), client, RPL_ADMINME, params[0]);
+		sendReply(server.getServername(), client, RPL_ADMINLOC1, server.admin["adminName"]);
+		sendReply(server.getServername(), client, RPL_ADMINLOC2, server.admin["adminNickname"]);
+		sendReply(server.getServername(), client, RPL_ADMINEMAIL, server.admin["adminEmail"]);
 	}
 }

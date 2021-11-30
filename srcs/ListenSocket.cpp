@@ -2,6 +2,7 @@
 #include <sstream>
 #include "ListenSocket.hpp"
 #include <set>
+#include <algorithm>
 
 namespace IRC {
 
@@ -9,7 +10,7 @@ namespace IRC {
 		std::string buf;
 		std::fstream conf;
 //		filepath = "feefef";
-		conf.open(filepath);
+		conf.open(filepath.c_str());
 		std::map<std::string, std::string> confs;
 		if (!conf.is_open()) {
 			return confs;
@@ -78,6 +79,7 @@ namespace IRC {
 
 	void ListenSocket::configure(std::string const &path) {
 		std::map<std::string, std::string> configs = get_config(path);
+		// TODO: fix всегда ставит hostname
 		if (configs.find("servername") != configs.end()) {
 			this->servername = configs["servername"];
 		} else {
@@ -193,24 +195,24 @@ namespace IRC {
 		}
 	}
 
-	void ListenSocket::handle_chat(int const &i) {
+	void ListenSocket::handle_chat(int const &fd) {
 		char buf[BUFFER_SIZE];
 		int nbytes;
-		if ((nbytes = recv(i, buf, sizeof buf - 1, 0)) <= 0) {// получена ошибка или соединение закрыто клиентом
+		if ((nbytes = recv(fd, buf, sizeof buf - 1, 0)) <= 0) {// получена ошибка или соединение закрыто клиентом
 			if (nbytes == 0) {
 				// соединение закрыто
-				printf("selectserver: socket %d hung up\n", i);
+				printf("selectserver: socket %d hung up\n", fd);
 			} else {
 				std::cerr << "Error recieve" << std::endl;
 			}
 //			clients.erase(std::find_if(clients.begin(), clients.end(), is_fd(i)));
 //            close(i); // bye!
 //            FD_CLR(i, &master); // удаляем из мастер-сета
-			quit_client(i);
+			quit_client(fd);
 		} else {// у нас есть какие-то данные от клиента
 			// если fd нет, UB
 			buf[nbytes] = '\0';
-			std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(i));
+			std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(fd));
 			Command cmd(buf);
 			cmd.exec(*client, *this);
 //			cmd.send_to(*client, *this);
@@ -247,8 +249,8 @@ namespace IRC {
 	}
 
 	void ListenSocket::check_connections() {
-		socklen_t addrlen;
-		struct sockaddr_storage remoteaddr;
+//		socklen_t addrlen;addrlen
+//		struct sockaddr_storage remoteaddr;
 
 		if (FD_ISSET(listener, &read_fds)) {// обрабатываем новые соединения
 			new_client();
@@ -256,11 +258,11 @@ namespace IRC {
 
 		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
-			if (!(it->getFlags() & UMODE_REGISTERED)
+			if (!it->isFlag(UMODE_REGISTERED)
 				&& it->login_time + this->registration_timeout - time(NULL) <= 0) {
 				// reply timeout
 				{
-					Command cmd("ERROR");
+					Command cmd("", "ERROR");
 					cmd << "Registration timeout";
 					send_command(cmd, it->getFd());
 				}

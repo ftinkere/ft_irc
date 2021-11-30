@@ -14,14 +14,14 @@ namespace IRC {
         return true;
     }
 
-    void Channel::add_memeber(Client const& member)
+    void Channel::add_memeber(Client & member)
     {
 //        base[member] = 0;
 		if (users.empty()) {
 			opers.insert(&member.getNick());
             voiced.insert(&member.getNick());
 		}
-		users.insert(&const_cast<Client&>(member));
+		users.insert(&member);
 	}
 
     bool Channel::check_limit()

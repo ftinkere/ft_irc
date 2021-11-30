@@ -21,7 +21,7 @@ namespace IRC {
     {
     public:
         ListenSocket(const char* port);
-        ~ListenSocket();
+        virtual ~ListenSocket();
 
 		void execute();
 		void configure(std::string const& path);
@@ -50,7 +50,7 @@ namespace IRC {
         in_addr &get_in_addr(struct sockaddr *sa);
         char* recieve_ip(struct sockaddr_storage &remoteaddr);
         void new_client();
-        void handle_chat(int const& i);
+        void handle_chat(int const& fd);
 		int handle_message(const char *buf, Client *client);
 
 	public:

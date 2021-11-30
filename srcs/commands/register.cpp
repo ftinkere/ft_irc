@@ -90,6 +90,7 @@ namespace IRC {
 		for (int i = 0; i < clients.size(); ++i) { //отправляем
 			Command cmd(client.get_full_name(), CMD_PRIVMSG);
 			// TODO: fix to channel and list (#chan or user1,user2)
+			// privmsg #chan,nick
 			cmd << clients[i]->getNick() << msg;
 			server.send_command(cmd, clients[i]->getFd());
 //			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
@@ -117,7 +118,7 @@ namespace IRC {
 			}
 		}
 		for (int i = 0; i < clients.size(); ++i) {//отправляем
-			Command cmd(client.get_full_name(), CMD_PRIVMSG);
+			Command cmd(client.get_full_name(), CMD_NOTICE);
 			cmd << clients[i]->getNick() << msg;
 			server.send_command(cmd, clients[i]->getFd());
 //			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");

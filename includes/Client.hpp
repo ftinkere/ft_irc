@@ -38,7 +38,7 @@ namespace IRC {
 		time_t login_time;
 
 		Client();
-		Client(int fd) : fd(fd), flags(0) {}
+		Client(int fd) : fd(fd), flags(UMODE_WALLOPS) {}
 
 		virtual ~Client() {}
 
@@ -63,6 +63,8 @@ namespace IRC {
 		void setAway(const std::string &msg) { Client::away = msg; }
 		const std::string &getAway() const { return away; }
 		void clearAway() { Client::away.clear(); }
+
+		const time_t getTime() const { return login_time; }
 
 		std::list<std::string> &getChannels() { return channels; }
 		void setChannels(std::string const& flag) { channels.push_back(flag); }

@@ -34,7 +34,7 @@ bool IRC::Client::try_register(ListenSocket & server) {
 
     Client buf = *this;
 
-    server.base_client.push_back(buf);//создаем неизменяемую базу клиентов 
+    server.base_client[this->nick] = buf;//создаем неизменяемую базу клиентов 
 	return true;
 }
 

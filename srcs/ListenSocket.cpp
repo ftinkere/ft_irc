@@ -47,6 +47,8 @@ namespace IRC {
 		commands[CMD_KILL] = &cmd_kill;
 		commands[CMD_ADMIN] = &cmd_admin;
 		commands[CMD_WHOIS] = &cmd_whois;
+		commands[CMD_WALLOPS] = &cmd_wallops;
+		commands[CMD_WHOWAS] = &cmd_whowas;
 		Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
 		Channel::modes.insert(std::make_pair(INVIT, Channel::I));
 		Channel::modes.insert(std::make_pair(MODES, Channel::M));

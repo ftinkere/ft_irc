@@ -10,8 +10,8 @@
 //#include "Channel.hpp"
 
 
-// прописать выполненые задачи для сервера
-//сделать ли проверку на инвизбл для привмсг и нотис????
+// прописать ответ на  выполненые задачи для сервера
+//сделать ли проверку на инвизбл для привмсг и нотис и join????
 //сделать ответы клиентам при выполнении команд
 //сделать историю
 //проверить регистрацию
@@ -949,26 +949,107 @@ namespace IRC {
 				continue;
 			}
 			std::string chans_str;
-			std::list<std::string>::iterator chans = client.getChannels().begin();
-			for (;chans != client.getChannels().end(); ++chans){
+			Client find_client = *to;
+			std::list<std::string>::iterator chans = find_client.getChannels().begin(); //берем клиента
+			for (;chans != find_client.getChannels().end(); ++chans){
 				Channel &channel = server.channels[*chans];
 				if (channel.isFlag(CMODE_SECRET))
 					continue;
-				else if (channel.opers.find(&client.getNick()) != channel.opers.end())
+				else if (channel.opers.find(&find_client.getNick()) != channel.opers.end())//заполняем список каналов
 					chans_str += '@' + *chans + ' ';
 				else if (channel.voiced.find(&client.getNick()) != channel.voiced.end())
 					chans_str += '+' + *chans + ' ';
 				else
 					chans_str += *chans + ' ';
 			}
-			sendReply(server.getServername(), client, RPL_WHOISUSER, nick, client.getUser(), client.getHost(), "realname"); 
+			sendReply(server.getServername(), client, RPL_WHOISUSER, nick, find_client.getUser(), find_client.getHost(), "realname"); 
 			sendReply(server.getServername(), client, RPL_WHOISCHANNELS, nick, chans_str);
-			if (!client.getAway().empty())
-				sendReply(server.getServername(), client, RPL_AWAY, nick, client.getAway());
-			if (client.isFlag(UMODE_NOPER))
+			if (!find_client.getAway().empty())
+				sendReply(server.getServername(), client, RPL_AWAY, nick, find_client.getAway());
+			if (find_client.isFlag(UMODE_NOPER))
 				sendReply(server.getServername(), client, RPL_WHOISOPERATOR, nick);
-			//TODO: время регистрации клиента RPL_WHOISIDLE
+			std::stringstream	regTime, onServer;
+			onServer << (time(0) - find_client.getTime());
+			regTime << find_client.getTime();
+			sendReply(server.getServername(), client, RPL_WHOISIDLE, nick, onServer.str(), regTime.str());
 			sendReply(server.getServername(), client, RPL_ENDOFWHOIS, nick);
 		}
+	}
+
+	void cmd_wallops(Command const &cmd, Client &client, ListenSocket &server) {
+		std::vector<std::string> params = cmd.getParams(); //параметры
+
+		if (params.empty()) {
+			sendError(client, server, ERR_NEEDMOREPARAMS, "WALLOPS");
+			return;
+		}
+		if (!client.isFlag(UMODE_NOPER))
+		{
+			sendError(client, server, ERR_NOPRIVILEGES);
+			return;
+		}
+
+		std::list<Client>::iterator to = server.clients.begin();
+		for (; to != server.clients.end(); ++to) { //отправляем
+			Command cmd(client.get_full_name(), CMD_WALLOPS);
+			if (to->isFlag(UMODE_WALLOPS)){
+				cmd << to->getNick() << params[0];
+				server.send_command(cmd, to->getFd());
+			}
+		}
+	}
+
+	void cmd_whowas(Command const &cmd, Client &client, ListenSocket &server) {
+		//TODO: поправить реалнейм
+		std::vector<std::string> params = cmd.getParams(); //параметры
+
+		if (params.empty()){
+			sendError(client, server, ERR_NONICKNAMEGIVEN);
+			return;
+		}
+		std::vector<std::string> nicks = Channel::split(params[0], ',');
+		size_t limit = 1;
+		// for (int i = 0; i < nicks.size(); ++i)
+		// {
+		// 	std::string nick = nicks[i];
+		// 	if (params.size() > 1)
+		// 		limit = check_num(params[1].c_str());
+		// 	size_t coun = server.base_client.count(nick); //количество элементов в мапе
+		// 	if (limit < 0 || coun < limit)
+		// 		limit = coun;
+		// 	std::pair<iterator,iterator> range =  
+		// 	for (;)
+		// 	std::list<Client>::iterator to = std::find_if(server.base_client.begin(), server.base_client.end(),
+		// 											  is_nickname(nick));
+		// 	if (to == server.base_client.end()) {
+		// 		sendError(client, server, ERR_WASNOSUCHNICK, nick);
+		// 		continue;
+		// 	}
+		// 	std::string chans_str;
+		// 	Client find_client = *to;
+		// 	std::list<std::string>::iterator chans = find_client.getChannels().begin(); //берем клиента
+		// 	for (;chans != find_client.getChannels().end(); ++chans){
+		// 		Channel &channel = server.channels[*chans];
+		// 		if (channel.isFlag(CMODE_SECRET))
+		// 			continue;
+		// 		else if (channel.opers.find(&find_client.getNick()) != channel.opers.end())//заполняем список каналов
+		// 			chans_str += '@' + *chans + ' ';
+		// 		else if (channel.voiced.find(&client.getNick()) != channel.voiced.end())
+		// 			chans_str += '+' + *chans + ' ';
+		// 		else
+		// 			chans_str += *chans + ' ';
+		// 	}
+		// 	sendReply(server.getServername(), client, RPL_WHOWASUSER, nick, find_client.getUser(), find_client.getHost(), "realname"); 
+		// 	sendReply(server.getServername(), client, RPL_WHOISCHANNELS, nick, chans_str);
+		// 	if (!find_client.getAway().empty())
+		// 		sendReply(server.getServername(), client, RPL_AWAY, nick, find_client.getAway());
+		// 	if (find_client.isFlag(UMODE_NOPER))
+		// 		sendReply(server.getServername(), client, RPL_WHOISOPERATOR, nick);
+		// 	std::stringstream	regTime, onServer;
+		// 	onServer << (time(0) - find_client.getTime());
+		// 	regTime << find_client.getTime();
+		// 	sendReply(server.getServername(), client, RPL_WHOISIDLE, nick, onServer.str(), regTime.str());
+		// 	sendReply(server.getServername(), client, RPL_ENDOFWHOIS, nick);
+		// }
 	}
 }

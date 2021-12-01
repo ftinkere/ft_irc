@@ -13,7 +13,7 @@ namespace IRC {
 #define CMD_OPER "OPER"
 #define CMD_QUIT "QUIT"
 
-#define CMD_JOIN "JOIN"
+#define CMD_JOIN "JOIN" //доделать
 #define CMD_PART "PART"
 #define CMD_MODE "MODE"
 #define CMD_TOPIC "TOPIC"
@@ -41,7 +41,7 @@ namespace IRC {
 #define CMD_AWAY "AWAY"
 //#define CMD_REHASH "REHASH"
 //#define CMD_RESTART "RESTART"
-#define CMD_WALLOPS "WALLOPS" // нет
+#define CMD_WALLOPS "WALLOPS"
 
 }
 #endif //FT_IRC_PARSER_HPP

@@ -3,52 +3,52 @@
 //
 
 #include "commands.hpp"
-
+//TODO: whois whowas
 namespace IRC {
 
     void cmd_names(Command const &cmd, Client &client, ListenSocket &server) {
         std::vector<std::string> const &params = cmd.getParams(); //параметры
         std::vector<std::string> chans;
-        //        std::vector<std::string> keys;
-        int res;
         int count = 0;
+        std::map<std::string, Channel>::iterator it;
+        std::vector<std::map<std::string, Channel>::iterator> mas_it;
+        std::vector<std::map<std::string, Channel>::iterator>::iterator vec_it;
+        size_t len = 0;
 
         if (!params.empty()) {
             chans = Channel::split(params[0], ',');
-        } else {//если нет каналов выводим все
-            for (std::map<std::string, Channel>::iterator it = server.channels.begin();
-            it != server.channels.end(); ++it)
-                chans.push_back(it->first);
+            len = chans.size();
+            for (int i = 0; i < len; ++i){
+                it = server.channels.find(chans[i]);
+                if (it == server.channels.end())
+                    continue;
+                mas_it.push_back(it);
+            }
+        }
+        else {//если нет каналов выводим все
+            for(it = server.channels.begin(); it != server.channels.end(); ++it)
+                mas_it.push_back(it);
             count = 1;
         }
-        size_t len = chans.size();
-        for (int i = 0; i < len; ++i) {
-            Channel &channel = server.channels.find(chans[i])->second;
-            if (!Channel::check_name(chans[i])) {
+        for (vec_it = mas_it.begin(); vec_it != mas_it.end(); ++vec_it){
+            Channel &channel = (*vec_it)->second;
+            if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end())
                 continue;
-            }
-            if (server.channels.find(chans[i]) == server.channels.end()) {
-                continue;
-            }
-            if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end()) {
-                continue;
-            }
-            //остановился здесь
-            sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], channel.get_names());
-            sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i]);
+            sendReply(server.getServername(), client, RPL_NAMREPLY, (*vec_it)->first, channel.get_names());
+            sendReply(server.getServername(), client, RPL_ENDOFNAMES, (*vec_it)->first);
         }
-        if (count == 1)// если мы не выводили тзбранные каналы
-            {
+        if (count == 1)
+        {// если мы не выводили избранные каналы
             std::string cl;
-            std::list<Client>::iterator it = server.clients.begin();
-            for (; it != server.clients.end(); ++it) {
-                if (it->getChannels().empty() && !(it->isFlag(UMODE_INVIS))) {
-                    cl += (*it).getNick() + " ";
+            std::list<Client>::iterator lst = server.clients.begin();
+            for (; lst != server.clients.end(); ++lst) {
+                if (lst->getChannels().empty() && !(lst->isFlag(UMODE_INVIS))) {
+                    cl += (*lst).getNick() + " ";
                 }
             }
             sendReply(server.getServername(), client, RPL_NAMREPLY, "No channels", cl);
             sendReply(server.getServername(), client, RPL_ENDOFNAMES, "No channels");
-            }
+        }
     }
 
     void cmd_admin(Command const &cmd, Client &client, ListenSocket &server) {
@@ -68,7 +68,7 @@ namespace IRC {
 
     void cmd_whois(Command const &cmd, Client &client, ListenSocket &server) {
         //TODO: поправить реалнейм
-        std::vector<std::string> params = cmd.getParams(); //параметры
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
 
         if (params.empty()){
             sendError(client, server, ERR_NONICKNAMEGIVEN);
@@ -115,7 +115,7 @@ namespace IRC {
     void cmd_whowas(Command const &cmd, Client &client, ListenSocket &server) {
         //TODO: поправить реалнейм
         //TODO: сделать проверку на имя сервера
-        std::vector<std::string> params = cmd.getParams(); //параметры
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
 
         if (params.empty()){
             sendError(client, server, ERR_NONICKNAMEGIVEN);
@@ -134,9 +134,9 @@ namespace IRC {
                     limit = coun;
                 std::pair<std::multimap<std::string, Client>::iterator, std::multimap<std::string, Client>::iterator> range =  server.base_client.equal_range(nick);//находим список всех совпадений
                 int j = 0;
-                for (std::multimap<std::string, Client>::iterator i = range.first; i != range.second && j < limit; ++i, ++j)
+                for (std::multimap<std::string, Client>::iterator it = range.first; it != range.second && j < limit; ++it, ++j)
                 {
-                    sendReply(server.getServername(), client, RPL_WHOWASUSER, nick, i->second.getUser(), i->second.getHost(), "realname");
+                    sendReply(server.getServername(), client, RPL_WHOWASUSER, nick, it->second.getUser(), it->second.getHost(), "realname");
                     loop = true;//если зашли в цикл значит такой ник есть
                 }
                 if (!loop)

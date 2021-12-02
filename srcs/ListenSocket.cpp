@@ -180,9 +180,9 @@ namespace IRC {
 //			std::cout << "[DEBUG]: " << node << std::endl;
 
 			if (res == 0) {
-				this->clients.back().host = node;
+				this->clients.back().setHost(node);
 			} else {
-				this->clients.back().host = ipv4;
+			    this->clients.back().setHost(ipv4);
 			}
 			this->clients.back().login_time = time(NULL);
 

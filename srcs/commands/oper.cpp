@@ -3,7 +3,7 @@
 //
 
 #include "commands.hpp"
-
+//TODO: all
 namespace IRC {
 
     void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {

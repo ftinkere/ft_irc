@@ -17,7 +17,6 @@ IRC::is_fd_s IRC::is_fd(int fd) {
 bool IRC::Client::try_register(ListenSocket & server) {
 //	std::cout << "[DEBUG]: server password: " << server.getPassword() << std::endl;
 //	std::cout << "[DEBUG]: nick: " << this->nick << std::endl;
-	// TODO: если проблемы с паролем, выкинуть
 	if (this->nick.empty() || this->user.empty()) {
 		return false;
 	} else if (!server.getPassword().empty() && this->pass != server.getPassword()) {

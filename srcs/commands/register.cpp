@@ -5,9 +5,8 @@
 #include "commands.hpp"
 
 //TODO:прописать ответ на  выполненые задачи для сервера
-//TODO:сделать ли проверку на инвизбл для привмсг и нотис и join????
+//TODO:сделать ли проверку на инвизбл join????
 //TODO:сделать ответы клиентам при выполнении команд
-//TODO:проверить регистрацию
 //TODO: подумать над порядком whowas
 //TODO: добавление в базу админа и сервера
 
@@ -20,43 +19,45 @@ namespace IRC {
 		if (params.empty()) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "PASS", "");
 			// reply not args
-		} else if (client.getFlags() & UMODE_REGISTERED) {
+		} else if (client.isFlag(UMODE_REGISTERED)) {
 			sendError(client, server, ERR_ALREADYREGISTRED, "", "");
 		} else {
-			client.pass = cmd.getParams()[0];
+		    client.setPass(params[0]);
 		}
 	}
 
 	void cmd_nick(Command const &cmd, Client &client, ListenSocket &server) {
-		// TODO check registered
 		// check nick else reply 432 :Erroneous Nickname
+		std::vector<std::string> const &params = cmd.getParams();
 		std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-													  is_nickname(cmd.getParams()[0]));
-		if (cmd.getParams().empty()) {
-			sendError(client, server, ERR_NONICKNAMEGIVEN, "", "");
+													  is_nickname(params[0]));
+		if (params.empty()) {
+			sendError(client, server, ERR_NONICKNAMEGIVEN);
 			return;
 		}// else reply not args
-		if (!client._name_control(cmd.getParams()[0], 0)) //беру только первый аргумент
+		if (!client._name_control(params[0], 0)) //беру только первый аргумент
 		{
-			sendError(client, server, ERR_ERRONEUSNICKNAME, cmd.getParams()[0], "");
+		    sendError(client, server, ERR_ERRONEUSNICKNAME, params[0]);
 			return;
 		}
 		if (to != server.clients.end()) {
-			sendError(client, server, ERR_NICKNAMEINUSE, cmd.getParams()[0], "");
+		    sendError(client, server, ERR_NICKNAMEINUSE, params[0]);
 			return;
 		}
-		client.nick = cmd.getParams()[0];
-		client.try_register(server);
+		client.setNick(params[0]);
+		if (!client.isFlag(UMODE_REGISTERED))
+		    client.try_register(server);
 	}
 
 	void cmd_user(Command const &cmd, Client &client, ListenSocket &server) {
 		// check user
-		if (cmd.getParams().empty() || cmd.getParams().size() < 4) {
-			sendError(client, server, ERR_NEEDMOREPARAMS, "USER", "");
-		} else if (client.getFlags() & UMODE_REGISTERED) {
-			sendError(client, server, ERR_ALREADYREGISTRED, "", "");
+		std::vector<std::string> const &params = cmd.getParams();
+		if (params.empty() || params.size() < 4) {
+			sendError(client, server, ERR_NEEDMOREPARAMS, "USER");
+		} else if (client.isFlag(UMODE_REGISTERED)) {
+			sendError(client, server, ERR_ALREADYREGISTRED);
 		} else {
-			client.user = cmd.getParams()[0];
+		    client.setUser(params[0]);
 			client.try_register(server);
 		} // else reply not args
 	}
@@ -69,7 +70,7 @@ namespace IRC {
 		    quit = "quit";
 		} else
 		    quit = params[0];
-		std::cout << "[DEBUG]: " << client.nick << "!" << client.user << "@" << client.host << " " << cmd.getCommand()
+		std::cout << "[DEBUG]: " << client.getNick() << "!" << client.getUser() << "@" << client.getHost() << " " << cmd.getCommand()
 				  << ": " << quit << std::endl;
 	}
 }

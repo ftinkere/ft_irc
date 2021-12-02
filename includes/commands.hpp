@@ -21,7 +21,12 @@
 namespace IRC {
 
     //вспомогательные функции
-    int check_num(const char *str)
+    int check_num(const char *str);
+    std::string choose_str(std::vector<std::string> const &params, size_t len, int j);
+    Channel* check_channel(std::string const &chans, ListenSocket &server, Client & client, int visible);
+    bool priv_need_channel(Channel *channel, Client const &client, ListenSocket &server, std::string const &chani);
+    bool check_nick(std::list<Client>::iterator& it, Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chani);
+    bool erase_member(Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chani);
 
     //Массив комманд сервера
     void cmd_pass(Command const &cmd, Client &client, ListenSocket &server);

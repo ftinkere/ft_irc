@@ -27,14 +27,13 @@ namespace IRC {
 		int fd;
 		int flags;
 		std::list<std::string> channels;
-
-	public:
 		std::string pass;
 		std::string nick;
 		std::string user;
 		std::string away;
 		std::string host;
 
+	public:
 		time_t login_time;
 
 		Client();
@@ -53,9 +52,13 @@ namespace IRC {
 		int isFlag(int flag) const { return flags & flag; }
 
 		const std::string &getHost() const { return host; }
+		void setHost(const std::string &nick) { host = nick; }
 
 		const std::string &getNick() const { return nick; }
 		void setNick(const std::string &nick) { Client::nick = nick; }
+
+		const std::string &getPass() const { return pass; }
+		void setPass(const std::string &nick) { pass = nick; }
 
 		const std::string &getUser() const { return user; }
 		void setUser(const std::string &user) { Client::user = user; }

@@ -24,10 +24,11 @@ namespace IRC {
 
 #define CMD_PRIVMSG "PRIVMSG"
 #define CMD_NOTICE "NOTICE"
+#define CMD_WALLOPS "WALLOPS"
+#define CMD_AWAY "AWAY"
 
-// #define CMD_WHO "WHO"
 #define CMD_WHOIS "WHOIS"
-#define CMD_WHOWAS "WHOWAS" //нет
+#define CMD_WHOWAS "WHOWAS"
 
 #define CMD_KILL "KILL"
 #define CMD_PING "PING" //нет
@@ -37,11 +38,7 @@ namespace IRC {
 //#define CMD_TIME "TIME"
 #define CMD_ADMIN "ADMIN"
 //#define CMD_INFO "INFO"
-
-#define CMD_AWAY "AWAY"
 //#define CMD_REHASH "REHASH"
 //#define CMD_RESTART "RESTART"
-#define CMD_WALLOPS "WALLOPS"
-
 }
 #endif //FT_IRC_PARSER_HPP

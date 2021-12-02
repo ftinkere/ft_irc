@@ -49,6 +49,8 @@ namespace IRC {
 		commands[CMD_WHOIS] = &cmd_whois;
 		commands[CMD_WALLOPS] = &cmd_wallops;
 		commands[CMD_WHOWAS] = &cmd_whowas;
+//		commands[CMD_PING] = &cmd_ping;
+//		commands[CMD_PONG] = &cmd_pong;
 		Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
 		Channel::modes.insert(std::make_pair(INVIT, Channel::I));
 		Channel::modes.insert(std::make_pair(MODES, Channel::M));
@@ -415,7 +417,12 @@ namespace IRC {
 		}
 		if (feedback.getFlags() & UMODE_NOPER) {
 			return &(*it);
-		} else {
+		}
+		else if (flag == 1 && !(*it).isFlag(UMODE_INVIS))
+		{
+		    return &(*it);
+		}
+		else {
 			if ((*it).isFlag(UMODE_INVIS)){
 				sendError(feedback, *this, ERR_NOSUCHNICK, nick);
 				return NULL;

@@ -27,8 +27,6 @@ namespace IRC {
 	}
 
 	void cmd_nick(Command const &cmd, Client &client, ListenSocket &server) {
-		// TODO check registered
-		// check nick else reply 432 :Erroneous Nickname
 		std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
 													  is_nickname(cmd.getParams()[0]));
 		if (cmd.getParams().empty()) {
@@ -49,16 +47,15 @@ namespace IRC {
 	}
 
 	void cmd_user(Command const &cmd, Client &client, ListenSocket &server) {
-		// check user
 		if (cmd.getParams().empty() || cmd.getParams().size() < 4) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "USER", "");
 		} else if (client.getFlags() & UMODE_REGISTERED) {
 			sendError(client, server, ERR_ALREADYREGISTRED, "", "");
 		} else {
-			// TODO: realname
+			client.realname = cmd.getParams()[3];
 			client.user = cmd.getParams()[0];
 			client.try_register(server);
-		} // else reply not args
+		}
 	}
 
 	void cmd_quit(Command const &cmd, Client &client, ListenSocket &server) {
@@ -95,7 +92,7 @@ namespace IRC {
 			server.send_command(cmd, clients[i]->getFd());
 //			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
 			if (!clients[i]->getAway().empty())
-				sendReply(server.getServername(), client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway());
+				sendReply(client, server, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway());
 		}
 	}
 
@@ -129,13 +126,13 @@ namespace IRC {
 		std::vector<std::string> param = cmd.getParams(); //параметры
 		std::string msg;
 		if (param.empty()) {
-			sendReply(server.getServername(), client, RPL_UNAWAY);
+			sendReply(client, server, RPL_UNAWAY);
 			client.clearAway();
 		} else {
 			for (int j = 0; j < param.size(); ++j) { //собираем параметры для отправки
 				msg += param[j] + " ";
 			}
-			sendReply(server.getServername(), client, RPL_NOWAWAY);
+			sendReply(client, server, RPL_NOWAWAY);
 			client.setAway(msg);
 		}
 	}
@@ -239,9 +236,11 @@ namespace IRC {
 			chan.add_memeber(client);
 			client.addChannel(chans[i]);
 
-			// TODO: topic
-			sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], chan.get_names());
-			sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i]);
+			if (!chan.getTopic().empty()) {
+				sendReply(client, server, RPL_TOPIC, chans[i], chan.getTopic());
+			}
+			sendReply(client, server, RPL_NAMREPLY, chans[i], chan.get_names());
+			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
 
 //            if (i < keys.size())
 //            {
@@ -314,13 +313,12 @@ namespace IRC {
 		std::vector<std::string> chans = Channel::split(params[0], ',');
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
-			// TODO: fix UB
-			Channel &channel = server.channels.find(chans[i])->second;
-			if (!Channel::check_name(chans[i])) {
+			if (server.channels.find(chans[i]) == server.channels.end()) {
 				sendError(client, server, ERR_NOSUCHCHANNEL, chans[i], "");
 				continue;
 			}
-			if (server.channels.find(chans[i]) == server.channels.end()) {
+			Channel &channel = server.channels.find(chans[i])->second;
+			if (!Channel::check_name(chans[i])) {
 				sendError(client, server, ERR_NOSUCHCHANNEL, chans[i], "");
 				continue;
 			}
@@ -336,9 +334,6 @@ namespace IRC {
 	void cmd_topic(Command const &cmd, Client &client, ListenSocket &server) {
 		std::vector<std::string> const &params = cmd.getParams(); //параметры
 		std::string msg;
-//        std::vector<std::string> keys;
-		int res;
-		int count = 0;
 
 		if (params.empty()) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "TOPIC", "");
@@ -382,12 +377,13 @@ namespace IRC {
 
 		if (msg.empty() && params.size() == 1) {
 			if (channel.getTopic().empty())
-				sendReply(server.getServername(), client, RPL_NOTOPIC, chani);
+				sendReply(client, server, RPL_NOTOPIC, chani);
 			else
-				sendReply(server.getServername(), client, RPL_TOPIC, chani, channel.getTopic());
+				sendReply(client, server, RPL_TOPIC, chani, channel.getTopic());
 		} else if (msg.empty()) {
 			if (channel.isFlag(CMODE_TOPIC)) {
-				if (channel.opers.find(&(client.getNick())) == channel.opers.end()) {
+				if (channel.opers.find(&(client.getNick())) == channel.opers.end()
+					&& !client.isFlag(UMODE_OPER)) {
 					sendError(client, server, ERR_CHANOPRIVSNEEDED, chani);
 					return;
 				}
@@ -395,7 +391,8 @@ namespace IRC {
 			channel.clearTopic();//очищаем топик
 		} else {
 			if (channel.isFlag(CMODE_TOPIC)) {
-				if (channel.opers.find(&(client.getNick())) == channel.opers.end()) {
+				if (channel.opers.find(&(client.getNick())) == channel.opers.end()
+					&& !client.isFlag(UMODE_OPER)) {
 					sendError(client, server, ERR_CHANOPRIVSNEEDED, chani);
 					return;
 				}
@@ -423,20 +420,19 @@ namespace IRC {
 		}
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
-			// TODO: fix UB
-			Channel &channel = server.channels.find(chans[i])->second;
-			if (!Channel::check_name(chans[i])) {
+			if (server.channels.find(chans[i]) == server.channels.end()) {
 				continue;
 			}
-			if (server.channels.find(chans[i]) == server.channels.end()) {
+			Channel &channel = server.channels.find(chans[i])->second;
+			if (!Channel::check_name(chans[i])) {
 				continue;
 			}
 			if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end()) {
 				continue;
 			}
 			//остановился здесь
-			sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], channel.get_names());
-			sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i]);
+			sendReply(client, server, RPL_NAMREPLY, chans[i], channel.get_names());
+			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
 		}
 		if (count == 1)// если мы не выводили тзбранные каналы
 		{
@@ -447,8 +443,8 @@ namespace IRC {
 					cl += (*it).getNick() + " ";
 				}
 			}
-			sendReply(server.getServername(), client, RPL_NAMREPLY, "No channels", cl, "", "", "", "", "", "");
-			sendReply(server.getServername(), client, RPL_ENDOFNAMES, "No channels", "", "", "", "", "", "", "");
+			sendReply(client, server, RPL_NAMREPLY, "No channels", cl, "", "", "", "", "", "");
+			sendReply(client, server, RPL_ENDOFNAMES, "No channels", "", "", "", "", "", "", "");
 		}
 	}
 
@@ -469,11 +465,11 @@ namespace IRC {
 		}
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
-			Channel &channel = server.channels.find(chans[i])->second; // TODO: fix UB
-			if (!Channel::check_name(chans[i])) {
+			if (server.channels.find(chans[i]) == server.channels.end()) {
 				continue;
 			}
-			if (server.channels.find(chans[i]) == server.channels.end()) {
+			Channel &channel = server.channels.find(chans[i])->second;
+			if (!Channel::check_name(chans[i])) {
 				continue;
 			}
 			if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end()) {
@@ -484,10 +480,10 @@ namespace IRC {
 //				chans[i].clear();
 			std::stringstream ss;
 			ss << channel.users.size();
-			sendReply(server.getServername(), client, RPL_LIST, chans[i], ss.str(), channel.getTopic());
+			sendReply(client, server, RPL_LIST, chans[i], ss.str(), channel.getTopic());
 
 		}
-		sendReply(server.getServername(), client, RPL_LISTEND);
+		sendReply(client, server, RPL_LISTEND);
 	}
 
 	void cmd_invite(Command const &cmd, Client &client, ListenSocket &server) {
@@ -522,13 +518,15 @@ namespace IRC {
 			sendError(client, server, ERR_USERONCHANNEL, params[0], params[1]);
 			return;
 		}
-		if (channel.isFlag(CMODE_INVITE) && channel.opers.find(&client.getNick()) == channel.opers.end()) {
+		if (channel.isFlag(CMODE_INVITE) && channel.opers.find(&client.getNick()) == channel.opers.end()
+			&& !client.isFlag(UMODE_OPER)) {
 			sendError(client, server, ERR_CHANOPRIVSNEEDED, params[1], "");//если нет привелегий
 			return;
 		}
-		sendReply(server.getServername(), client, RPL_INVITING, params[1], params[0]);
-		// TODO: разобраться
-		sendReply(server.getServername(), *it, RPL_AWAY, client.getNick(), "you were invited to the channel");
+		sendReply(client, server, RPL_INVITING, params[1], params[0]);
+		Command invite(client.get_full_name(), CMD_INVITE);
+		invite << it->getNick() << channel.getName();
+		server.send_command(invite, it->getFd());
 		channel.add_memeber(*it);
 		it->addChannel(params[1]);
 	}
@@ -559,8 +557,8 @@ namespace IRC {
 					sendError(client, server, ERR_NOTONCHANNEL, chans[0], "");
 					return;
 				}
-				// TODO: rights to server opers
-				if (channel.opers.find(&client.getNick()) == channel.opers.end()) {
+				if (channel.opers.find(&client.getNick()) == channel.opers.end()
+					&& !client.isFlag(UMODE_OPER)) {
 					sendError(client, server, ERR_CHANOPRIVSNEEDED, chans[0], "");//если нет привелегий
 					return;
 				}
@@ -583,7 +581,8 @@ namespace IRC {
 					sendError(client, server, ERR_NOTONCHANNEL, chans[i], "");
 					continue;
 				}
-				if (channel.opers.find(&client.getNick()) == channel.opers.end()) {
+				if (channel.opers.find(&client.getNick()) == channel.opers.end()
+					&& !client.isFlag(UMODE_OPER)) {
 					sendError(client, server, ERR_CHANOPRIVSNEEDED, chans[i], "");//если нет привелегий
 					continue;
 				}
@@ -611,7 +610,6 @@ namespace IRC {
 		return res;
 	}
 
-	// TODO: fix -l not enough params
 	void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {
 		//добавить выводи режимов на экран
 		std::vector<std::string> const &params = cmd.getParams(); //параметры
@@ -625,25 +623,28 @@ namespace IRC {
 			Channel *channel = server.thisischannel(params[0], 0, client);
 			if (channel == NULL)
 				return;
-			if (channel->opers.find(&client.getNick()) == channel->opers.end()) {
+			if (channel->opers.find(&client.getNick()) == channel->opers.end()
+				&& !client.isFlag(UMODE_OPER)) {
 				sendError(client, server, ERR_CHANOPRIVSNEEDED, params[0], "");//если нет привелегий
 				return;
 			}
 			// MODE #chan +l 2
-			std::map<const char, size_t>::iterator mod;
-			mod = Channel::modes.find(params[1][1]);
-			size_t res = mod->second;
-			if (params[1].size() != 2 || mod == channel->modes.end()) {
+//			std::map<const char, size_t>::iterator mod;
+//			mod = Channel::modes.find(params[1][1]);
+//			size_t res = mod->second;
+			std::map<const char, enum Channel::model>::iterator it = Channel::modes.find(params[1][1]);
+			if (params[1].size() != 2 || it == Channel::modes.end()) {
 				sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
 				return;
 			}
+			enum Channel::model mod = it->second;
 			char sign = params[1][0];
 			if (sign != '-' && sign != '+') {
 				sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
 				return;
 			}
-			switch (res) {
-				case 0:
+			switch (mod) {
+				case Channel::I:
 					if (sign == '-') {
 						if (channel->isFlag(CMODE_INVITE))
 							channel->zeroFlag(CMODE_INVITE);
@@ -652,43 +653,35 @@ namespace IRC {
 							channel->setFlag(CMODE_INVITE);
 					}
 					break;
-				case 1:
+				case Channel::M:
 					if (sign == '-') {
-						if (channel->isFlag(CMODE_MODER))
-							channel->zeroFlag(CMODE_MODER);
+						channel->zeroFlag(CMODE_MODER);
 					} else {
-						if (!channel->isFlag(CMODE_MODER))
-							channel->setFlag(CMODE_MODER);
+						channel->setFlag(CMODE_MODER);
 					}
 					break;
-				case 2:
+				case Channel::S:
 					if (sign == '-') {
-						if (channel->isFlag(CMODE_SECRET))
-							channel->zeroFlag(CMODE_SECRET);
+						channel->zeroFlag(CMODE_SECRET);
 					} else {
-						if (!channel->isFlag(CMODE_SECRET))
-							channel->setFlag(CMODE_SECRET);
+						channel->setFlag(CMODE_SECRET);
 					}
 					break;
-				case 3:
+				case Channel::N:
 					if (sign == '-') {
-						if (channel->isFlag(CMODE_NOEXT))
-							channel->zeroFlag(CMODE_NOEXT);
+						channel->zeroFlag(CMODE_NOEXT);
 					} else {
-						if (!channel->isFlag(CMODE_NOEXT))
-							channel->setFlag(CMODE_NOEXT);
+						channel->setFlag(CMODE_NOEXT);
 					}
 					break;
-				case 4:
+				case Channel::T:
 					if (sign == '-') {
-						if (channel->isFlag(CMODE_TOPIC))
-							channel->zeroFlag(CMODE_TOPIC);
+						channel->zeroFlag(CMODE_TOPIC);
 					} else {
-						if (!channel->isFlag(CMODE_TOPIC))
-							channel->setFlag(CMODE_TOPIC);
+						channel->setFlag(CMODE_TOPIC);
 					}
 					break;
-				case 5: {
+				case Channel::O: {
 					if (params.size() < 3) {
 						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE", "");
 						return;
@@ -699,28 +692,28 @@ namespace IRC {
 						sendError(client, server, ERR_NOSUCHNICK, params[2], "");
 						return;
 					}
-					std::string nick = (*to).getNick();
+					std::string nick = to->getNick();
 					if (channel->users.find(&(*to)) == channel->users.end()) {
 						sendError(client, server, ERR_USERNOTINCHANNEL, params[2], params[0]);
 						return;
 					}
 					if (sign == '+') {
-						// TODO: rights
 						if (channel->opers.find(&nick) != channel->opers.end()) {
 							return;
 						} else {
-							channel->opers.insert(&((*to).getNick()));
+							channel->opers.insert(&to->getNick());
 						}
 					} else {
-						if (channel->opers.find(&nick) == channel->opers.end()) {
+						if (channel->opers.find(&nick) == channel->opers.end()
+							&& !client.isFlag(UMODE_OPER)) {
 							return;
 						} else {
-							channel->opers.erase(&((*to).getNick()));
+							channel->opers.erase(&to->getNick());
 						}
 					}
 					break;
 				}
-				case 6: {
+				case Channel::V: {
 					if (params.size() < 3) {
 						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE", "");
 						return;
@@ -731,7 +724,7 @@ namespace IRC {
 						sendError(client, server, ERR_NOSUCHNICK, params[2], "");
 						return;
 					}
-					std::string nick = (*to).getNick();
+					std::string nick = to->getNick();
 					if (channel->users.find(&(*to)) == channel->users.end()) {
 						sendError(client, server, ERR_USERNOTINCHANNEL, params[2], params[0]);
 						return;
@@ -740,19 +733,19 @@ namespace IRC {
 						if (channel->voiced.find(&nick) != channel->voiced.end()) {
 							return;
 						} else {
-							channel->voiced.insert(&((*to).getNick()));
+							channel->voiced.insert(&to->getNick());
 						}
 					} else {
 						if (channel->voiced.find(&nick) == channel->voiced.end()) {
 							return;
 						} else {
-							channel->voiced.erase(&((*to).getNick()));
+							channel->voiced.erase(&to->getNick());
 						}
 					}
 					break;
 				}
-				case 7: {
-					if (params.size() < 3) {
+				case Channel::K: {
+					if (params.size() < 3 && sign == '+') {
 						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE", "");
 						return;
 					}
@@ -768,8 +761,8 @@ namespace IRC {
 					}
 					break;
 				}
-				case 8: {
-					if (params.size() < 3) {
+				case Channel::L: {
+					if (params.size() < 3 && sign == '+') {
 						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE", "");
 						return;
 					}
@@ -783,8 +776,6 @@ namespace IRC {
 					}
 					break;
 				}
-
-
 			}
 		} else {
 			Client *oclient = server.thisisnick(params[0], 0, client);
@@ -801,7 +792,7 @@ namespace IRC {
 				sendError(client, server, ERR_UMODEUNKNOWNFLAG, "", "");//если не подходит мод
 				return;
 			}
-			if (client.isFlag(UMODE_NOPER)) {
+			if (client.isFlag(UMODE_OPER)) {
 				if (mod == 'i') {
 					if (sign == '+')
 						oclient->setFlag(UMODE_INVIS);
@@ -814,12 +805,15 @@ namespace IRC {
 						oclient->zeroFlag(UMODE_WALLOPS);
 				} else if (mod == 'o') {
 					if (sign == '+')
-						oclient->setFlag(UMODE_NOPER);
+						oclient->setFlag(UMODE_OPER);
 					else
-						oclient->zeroFlag(UMODE_NOPER);
+						oclient->zeroFlag(UMODE_OPER);
 				}
 			} else {
-				if (mod == 'i') {
+				if (client.getNick() != oclient->getNick()) {
+					sendError(client, server, ERR_USERSDONTMATCH);
+					return;
+				} else if (mod == 'i') {
 					if (sign == '+')
 						oclient->setFlag(UMODE_INVIS);
 					else
@@ -830,12 +824,7 @@ namespace IRC {
 					else
 						oclient->zeroFlag(UMODE_WALLOPS);
 				} else if (mod == 'o') {
-					if (sign == '+') {
-						sendError(client, server, ERR_USERSDONTMATCH, "",
-								  "");//если не опер то не можешь редактировать чужой ник
-						return;
-					} else
-						oclient->zeroFlag(UMODE_NOPER); // TODO: fix любой может лишить прав оператора
+					sendError(client, server, ERR_NOPRIVILEGES);
 				}
 			}
 		}
@@ -861,8 +850,8 @@ namespace IRC {
 			sendError(client, server, ERR_PASSWDMISMATCH, "", "");
 			return;
 		}
-		sendReply(server.getServername(), client, RPL_YOUREOPER);
-		client.setFlag(UMODE_NOPER);
+		sendReply(client, server, RPL_YOUREOPER);
+		client.setFlag(UMODE_OPER);
 	}
 
 	void cmd_kill(Command const &cmd, Client &client, ListenSocket &server) {
@@ -877,7 +866,7 @@ namespace IRC {
 			return;
 		}
 
-		if (!(client.getFlags() & UMODE_NOPER)) {
+		if (!(client.getFlags() & UMODE_OPER)) {
 			sendError(client, server, ERR_NOPRIVILEGES, "", "");
 			return;
 		}
@@ -903,9 +892,9 @@ namespace IRC {
 			sendError(client, server, ERR_NOSUCHSERVER, params[0], "");
 			return;
 		}
-		sendReply(server.getServername(), client, RPL_ADMINME, params[0]);
-		sendReply(server.getServername(), client, RPL_ADMINLOC1, server.admin["adminName"]);
-		sendReply(server.getServername(), client, RPL_ADMINLOC2, server.admin["adminNickname"]);
-		sendReply(server.getServername(), client, RPL_ADMINEMAIL, server.admin["adminEmail"]);
+		sendReply(client, server, RPL_ADMINME, params[0]);
+		sendReply(client, server, RPL_ADMINLOC1, server.admin["adminName"]);
+		sendReply(client, server, RPL_ADMINLOC2, server.admin["adminNickname"]);
+		sendReply(client, server, RPL_ADMINEMAIL, server.admin["adminEmail"]);
 	}
 }

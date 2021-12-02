@@ -129,11 +129,11 @@ namespace IRC {
 			case ERR_BADCHANNELKEY:
 				cmd << arg1 << "Cannot join channel (+k)";
 				break;
-				case ERR_BADCHANMASK:
+			case ERR_BADCHANMASK:
 				cmd << arg1 << "Invalid channel name";
 				break;
 			case ERR_NOPRIVILEGES:
-				cmd << "Permission Denied- You're not an IRC operator";
+				cmd << "Permission Denied. You're not an IRC operator";
 				break;
 			case ERR_CHANOPRIVSNEEDED:
 				cmd << arg1 << "You're not channel operator";
@@ -159,17 +159,15 @@ namespace IRC {
 		return (-1);
 	}
 
-	int sendReply(const std::string &from, const Client &user, int rpl,
-                        const std::string &arg1, const std::string &arg2,
-                        const std::string &arg3, const std::string &arg4,
-                        const std::string &arg5, const std::string &arg6,
-                        const std::string &arg7, const std::string &arg8) {
-//		std::string msg = ":" + from + " ";
+	int sendReply(const Client &user, ListenSocket &server, int rpl,
+				  const std::string &arg1, const std::string &arg2,
+				  const std::string &arg3, const std::string &arg4,
+				  const std::string &arg5, const std::string &arg6,
+				  const std::string &arg7, const std::string &arg8) {
 		std::stringstream ss;
 		ss << rpl;
-//		msg += ss.str();
 
-		Command cmd(from, ss.str());
+		Command cmd(server.getServername(), ss.str());
 
 		switch (rpl) {
 			case RPL_USERHOST:
@@ -273,7 +271,7 @@ namespace IRC {
 				cmd << (arg1 + " Message of the day");
 				break;
 			case RPL_MOTD:
-				cmd <<  arg1;
+				cmd << arg1;
 				break;
 			case RPL_ENDOFMOTD:
 				cmd << "End of /MOTD command";
@@ -369,7 +367,7 @@ namespace IRC {
 				break;
 			case RPL_LUSERCLIENT:
 				cmd << ("There are " + arg1 + " users and " + arg2 +
-					    " invisible on " + arg3 + " servers");
+						" invisible on " + arg3 + " servers");
 				break;
 			case RPL_LUSEROP:
 				cmd << arg1 << "operator(s) online";
@@ -397,10 +395,10 @@ namespace IRC {
 				break;
 			default:
 				cmd << "UNKNOWN REPLY";
-				break; // TODO return
+//				break;
+				return 0;
 		}
-		std::string msg = cmd.to_string();
-		send(user.getFd(), msg.c_str(), msg.size(), 0);
+		server.send_command(cmd, user.getFd());
 		return 0;
 	}
 }

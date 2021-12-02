@@ -138,27 +138,15 @@ IRC::Command::Command(std::string const& message): valid(true) {
 		std::map<std::string, ListenSocket::cmd>::const_iterator it;
 		std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 		it = commands.find(command);
-		// TODO cmd not found
-		if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER))
-		{
-			it->second(*this, client, server);
-		}
-		else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end())
-		{
-			// if not registered - not registered 451 (except pass, nick, user)
-			sendError(client, server, 451, "", "");
-		}
-		else if (!(client.getFlags() & UMODE_REGISTERED) && it == commands.end())
-		{
+		if (!client.isFlag(UMODE_REGISTERED) && it == commands.end()) {
 			return;
-		}
-		else if (client.getFlags() & UMODE_REGISTERED && it == commands.end())
-		{
-			// reply command not found 421
-			sendError(client, server, 421, command, "");
-		}
-		else if (client.getFlags() & UMODE_REGISTERED)
-		{
+		} else if (client.isFlag(UMODE_REGISTERED) && it == commands.end()) {
+			sendError(client, server, ERR_UNKNOWNCOMMAND, command);
+		} if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER)) {
+			it->second(*this, client, server);
+		} else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end()) {
+			sendError(client, server, ERR_NOTREGISTERED);
+		} else if (client.getFlags() & UMODE_REGISTERED) {
 			it->second(*this, client, server);
 			std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
 		}

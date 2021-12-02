@@ -10,7 +10,7 @@
 #include "commands.hpp"
 
 #define UMODE_REGISTERED 0x01 // +r
-#define UMODE_NOPER 0x02      // +o
+#define UMODE_OPER 0x02       // +o
 #define UMODE_INVIS 0x04      // +i
 #define UMODE_WALLOPS 0x08    // +w
 
@@ -32,6 +32,7 @@ namespace IRC {
 		std::string pass;
 		std::string nick;
 		std::string user;
+		std::string realname;
 		std::string away;
 		std::string host;
 

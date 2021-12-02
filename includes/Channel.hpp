@@ -36,7 +36,7 @@ namespace IRC{
 		std::string	password;
 		int			limit;
 
-		std::set<Client *>			users;
+		std::set<Client *>				users;
 		std::set<std::string const*>	voiced;
 		std::set<std::string const*>	opers;
 
@@ -46,6 +46,8 @@ namespace IRC{
 
 		static bool check_name(std::string const& name);
 		static std::vector<std::string> split(const std::string &s, char delim);
+
+		const std::string& getName() const { return name; };
 
 		void setFlag(int flag) { flags = flags | flag; }
 		void zeroFlag(int flag) { flags &= ~flag; }
@@ -71,7 +73,7 @@ namespace IRC{
 
 		void erase_client(Client &cl);
 
-		enum model{
+		enum model {
 			I,
 			M,
 			S,
@@ -83,7 +85,7 @@ namespace IRC{
 			L
 		};
 
-		static std::map<const char, size_t> modes;
+		static std::map<const char, enum model> modes;
 	private:
 		static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 	};

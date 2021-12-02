@@ -79,7 +79,6 @@ namespace IRC {
 
 	void ListenSocket::configure(std::string const &path) {
 		std::map<std::string, std::string> configs = get_config(path);
-		// TODO: fix всегда ставит hostname
 		if (configs.find("servername") != configs.end()) {
 			this->servername = configs["servername"];
 		} else {
@@ -159,11 +158,6 @@ namespace IRC {
 				fd_max = fd_new;
 			}
 			ipv4 = recieve_ip(remoteaddr);
-			std::cout << "New connection from "
-					  << ipv4
-					  << " on socket "
-					  << fd_new
-					  << std::endl;
 			this->clients.push_back(Client(fd_new));
 
 			struct sockaddr_in sa;
@@ -174,7 +168,6 @@ namespace IRC {
 			memset(node, 0, NI_MAXHOST);
 			int res = getnameinfo(reinterpret_cast<const sockaddr *>(&sa), sizeof(sa), node, sizeof(node), NULL, 0, 0);
 			// TODO: errs
-//			std::cout << "[DEBUG]: " << node << std::endl;
 
 			if (res == 0) {
 				this->clients.back().host = node;
@@ -182,23 +175,17 @@ namespace IRC {
 				this->clients.back().host = ipv4;
 			}
 			this->clients.back().login_time = time(NULL);
-
-//			base->cl.ipv4 = ipv4;
-//            base->cl.fds = fd_new;
-//            base->cl.nick = "";
-//            base->cl.password = "";
-//            base->cl.user = "";
-//            base->val = std::make_pair(fd_new, base->cl);
-//            base->base_fd.insert(base->val);
-//            base->base_fd[4].fds = 45;
-//            base->base_nick.insert(base->val);
+			std::cout << "New connection from "
+			<< ipv4 << " : " << this->clients.back().host
+			<< " on fd " << fd_new
+			<< std::endl;
 		}
 	}
 
 	void ListenSocket::handle_chat(int const &fd) {
 		char buf[BUFFER_SIZE];
 		int nbytes;
-		if ((nbytes = recv(fd, buf, sizeof buf - 1, 0)) <= 0) {// получена ошибка или соединение закрыто клиентом
+		if ((nbytes = recv(fd, buf, sizeof buf - 1, 0)) <= 0) { // получена ошибка или соединение закрыто клиентом
 			if (nbytes == 0) {
 				// соединение закрыто
 				printf("selectserver: socket %d hung up\n", fd);
@@ -314,6 +301,10 @@ namespace IRC {
 		for (std::list<std::string>::iterator it = cl->getChannels().begin();
 			 it != cl->getChannels().end(); ++it) {
 			channels[*it].erase_client(*cl); //удаляем из всех групп
+			Command quit(cl->get_full_name(), CMD_QUIT);
+			for (std::set<Client *>::iterator itc = channels[*it].users.begin(); itc != channels[*it].users.end(); ++itc) {
+				this->send_command(quit, (*itc)->getFd());
+			}
 		}
 		clients.erase(cl);
 		close(fd); // bye!
@@ -412,7 +403,7 @@ namespace IRC {
 			sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
 			return NULL;
 		}
-		if (feedback.getFlags() & UMODE_NOPER) {
+		if (feedback.getFlags() & UMODE_OPER) {
 			return &(*it);
 		} else {
 			sendError(feedback, *this, ERR_USERSDONTMATCH, "",

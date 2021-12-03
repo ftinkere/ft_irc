@@ -70,7 +70,7 @@ namespace IRC {
 	void cmd_privmsg(Command const &cmd, Client &client, ListenSocket &server) {
 		std::vector<std::string> const &param = cmd.getParams(); //параметры
 		size_t len = param.size(); //длина параметров
-		if (param.empty()) {
+		if (param.empty() || param[0].empty()) {
 			sendError(client, server, ERR_NORECIPIENT, cmd.getCommand(), "");
 			return;
 		}
@@ -78,7 +78,61 @@ namespace IRC {
 			sendError(client, server, ERR_NOTEXTTOSEND, "", "");
 			return;
 		}
-		std::vector<Client *> clients = server.find_clients(cmd.getParams()[0], client); //ищем все ники
+
+		std::vector<Client *> clients;
+
+        if (param[0][0] == '#')
+        {
+            std::map<std::string, Channel>::iterator it = server.channels.find(param[0]);
+            if (it == server.channels.end())
+            {
+                sendError(client, server, ERR_NOSUCHCHANNEL, param[0]);
+                return;
+            }
+            if ((it->second.isFlag(CMODE_NOEXT) && it->second.users.find(&client) == it->second.users.end())
+            || (it->second.isFlag(CMODE_MODER) && it->second.voiced.find(&client.nick) == it->second.voiced.end()))
+            {
+                sendError(client, server, ERR_CANNOTSENDTOCHAN, param[0]);
+                return;
+            }
+            for (std::set<Client *>::iterator cit = it->second.users.begin(); cit != it->second.users.end(); ++cit)
+            {
+                clients.push_back(*cit);
+            }
+        }
+        else if (param[0].size() > 1 && param[0][0] == '@' && param[0][1] == '#')
+        {
+            std::map<std::string, Channel>::iterator it = server.channels.find(param[0]);
+            if (it == server.channels.end())
+            {
+                sendError(client, server, ERR_NOSUCHCHANNEL, param[0]);
+                return;
+            }
+            if ((it->second.isFlag(CMODE_NOEXT) && it->second.users.find(&client) == it->second.users.end())
+                || (it->second.isFlag(CMODE_MODER) && it->second.voiced.find(&client.nick) == it->second.voiced.end()))
+            {
+                sendError(client, server, ERR_CANNOTSENDTOCHAN, param[0]);
+                return;
+            }
+            for (std::set<std::string const *>::iterator cit = it->second.opers.begin(); cit != it->second.opers.end(); ++cit)
+            {
+                std::list<Client>::iterator client = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(**cit));
+                clients.push_back(&(*client));
+            }
+        }
+        else
+        {
+            std::list<Client>::iterator it_client = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(param[0]));
+            if (it_client == server.clients.end())
+            {
+                sendError(client, server, ERR_NOSUCHNICK, param[0]);
+                return;
+            }
+            clients.push_back(&(*it_client));
+            if (!it_client->getAway().empty())
+                sendReply(server.getServername(), client, RPL_AWAY, it_client->getNick(), it_client->getAway());
+        }
+
 		std::string msg;
 
 		for (int j = 1; j < len; ++j) { //собираем параметры для отправки
@@ -91,11 +145,8 @@ namespace IRC {
 			Command cmd(client.get_full_name(), CMD_PRIVMSG);
 			// TODO: fix to channel and list (#chan or user1,user2)
 			// privmsg #chan,nick
-			cmd << clients[i]->getNick() << msg;
+			cmd << param[0] << msg;
 			server.send_command(cmd, clients[i]->getFd());
-//			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
-			if (!clients[i]->getAway().empty())
-				sendReply(server.getServername(), client, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway());
 		}
 	}
 
@@ -108,7 +159,52 @@ namespace IRC {
 		if (!len) {
 			return;
 		}
-		std::vector<Client *> clients = server.find_clients(cmd.getParams()[0], WITMSG, client); //ищем все ники
+        std::vector<Client *> clients;
+
+        if (param[0][0] == '#')
+        {
+            std::map<std::string, Channel>::iterator it = server.channels.find(param[0]);
+            if (it == server.channels.end()) {
+                return;
+            }
+            if ((it->second.isFlag(CMODE_NOEXT) && it->second.users.find(&client) == it->second.users.end())
+                || (it->second.isFlag(CMODE_MODER) && it->second.voiced.find(&client.nick) == it->second.voiced.end()))
+            {
+                return;
+            }
+            for (std::set<Client *>::iterator cit = it->second.users.begin(); cit != it->second.users.end(); ++cit)
+            {
+                clients.push_back(*cit);
+            }
+        }
+        else if (param[0].size() > 1 && param[0][0] == '@' && param[0][1] == '#')
+        {
+            std::map<std::string, Channel>::iterator it = server.channels.find(param[0]);
+            if (it == server.channels.end())
+            {
+                return;
+            }
+            if ((it->second.isFlag(CMODE_NOEXT) && it->second.users.find(&client) == it->second.users.end())
+                || (it->second.isFlag(CMODE_MODER) && it->second.voiced.find(&client.nick) == it->second.voiced.end()))
+            {
+                return;
+            }
+            for (std::set<std::string const *>::iterator cit = it->second.opers.begin(); cit != it->second.opers.end(); ++cit)
+            {
+                std::list<Client>::iterator client = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(**cit));
+                clients.push_back(&(*client));
+            }
+        }
+        else
+        {
+            std::list<Client>::iterator it_client = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(param[0]));
+            if (it_client == server.clients.end())
+            {
+                return;
+            }
+            clients.push_back(&(*it_client));
+           }
+
 		std::string msg;
 
 		for (int j = 1; j < len; ++j) { //собираем параметры для отправки
@@ -121,7 +217,6 @@ namespace IRC {
 			Command cmd(client.get_full_name(), CMD_NOTICE);
 			cmd << clients[i]->getNick() << msg;
 			server.send_command(cmd, clients[i]->getFd());
-//			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
 		}
 	}
 
@@ -642,6 +737,7 @@ namespace IRC {
 				sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
 				return;
 			}
+
 			switch (res) {
 				case 0:
 					if (sign == '-') {

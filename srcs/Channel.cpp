@@ -4,7 +4,7 @@ namespace IRC {
     std::map<const char, size_t> Channel::modes;
     Channel::Channel(std::string const& name) :
 		name(name),
-		flags(CMODE_NOEXT | CMODE_MODER),
+		flags(CMODE_NOEXT),
 		limit(0)
         {}
 

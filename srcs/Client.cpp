@@ -30,9 +30,17 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	setFlag(UMODE_REGISTERED);
 	std::cout << "[DEBUG]: " << this->nick << "!" << this->user << "@" << this->host << " are registered." << std::endl;
 
+	sendReply(*this, server, RPL_WELCOME);
+	sendReply(*this, server, RPL_YOURHOST);
+	sendReply(*this, server, RPL_CREATED);
+	sendReply(*this, server, RPL_MYINFO);
+	sendReply(*this, server, RPL_ISUPPORT);
 	sendReply(*this, server, RPL_MOTDSTART, server.getServername());
 	sendReply(*this, server, RPL_MOTD, "Welcome! Ли сахлии-гар!");
 	sendReply(*this, server, RPL_ENDOFMOTD);
+
+	pinged = false;
+	last_pingpong = time(NULL);
 
 	return true;
 }

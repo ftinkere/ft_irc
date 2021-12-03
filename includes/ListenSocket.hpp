@@ -14,6 +14,8 @@
 
 #define BUFFER_SIZE 1025
 
+#define SERV_VERSION "0.0.pre1"
+
 namespace IRC {
     class Channel;
     class Command;
@@ -40,6 +42,8 @@ namespace IRC {
 
 		std::map<std::string, cmd> commands;
 
+		time_t creation_time;
+
 //        fd_set master;
 //        int fd_max;
 //        int fd_new;
@@ -54,13 +58,16 @@ namespace IRC {
 		int handle_message(const char *buf, Client *client);
 
 	public:
-		const static time_t registration_timeout = 30;
+		const static time_t registration_timeout = 60;
+		const static time_t ping_period = 240;
+		const static time_t pong_timeout = 240;
 
 		const std::list<Client> &getClients() const;
 		const fd_set &getReadFds() const;
 		const std::string &getServername() const;
 		const std::string &getPassword() const;
 		const std::map<std::string, cmd> &getCommands() const;
+		const time_t &getCreationTime() const { return creation_time; }
 		void quit_client(int fd);
 
 		std::vector<Client*> find_clients(const std::string &nick, int flag, Client const& feedback);
@@ -72,6 +79,12 @@ namespace IRC {
 		void send_command(Command const& command, Client const& client);
 		void send_command(Command const& command, std::string const& nickname);
 		void send_command(Command const& command, int fd);
+		void send_command(Client const& client, std::string const& cmd,
+						  std::string const& arg1 = "", std::string const& arg2 = "",
+						  std::string const& arg3 = "", std::string const& arg4 = "");
+		void send_command(int fd, std::string const& cmd,
+						  std::string const& arg1 = "", std::string const& arg2 = "",
+						  std::string const& arg3 = "", std::string const& arg4 = "");
 
 //        class SUBD
 //        {

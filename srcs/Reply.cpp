@@ -2,6 +2,7 @@
 // Created by Luci Atkins on 11/20/21.
 //
 
+#include <iomanip>
 #include "Reply.hpp"
 
 namespace IRC {
@@ -52,7 +53,7 @@ namespace IRC {
 				cmd << arg1 << "Wildcard in toplevel domain";
 				break;
 			case ERR_UNKNOWNCOMMAND:
-				cmd << arg1 << "Unknown command";
+				cmd << user.getNick() << arg1 << "Unknown command";
 				break;
 			case ERR_NOMOTD:
 				cmd << "MOTD File is missing";
@@ -163,14 +164,35 @@ namespace IRC {
 				   const std::string &arg5, const std::string &arg6,
 				   const std::string &arg7, const std::string &arg8) {
 		std::stringstream ss;
-		ss << rpl;
+		ss << std::setfill('0') << std::setw(3) << rpl;
 
 		Command cmd(server.getServername(), ss.str());
 
 		switch (rpl) {
-			case RPL_USERHOST:
-				cmd << arg1;
+			case RPL_WELCOME:
+				cmd << user.getNick() << ("Welcome to the FT Network, " + user.get_full_name());
 				break;
+			case RPL_YOURHOST:
+				cmd << user.getNick() << ("Your host is " + server.getServername() + ", running version " + SERV_VERSION);
+				break;
+			case RPL_CREATED: {
+				struct tm time = *localtime(&server.getCreationTime());
+				char buf[100] = {0};
+				strftime(buf, 99, "%d-%m-%Y %H-%M-%S", &time);
+				cmd << user.getNick() << ("This server was created " + std::string(buf));
+				break;
+			}
+			case RPL_MYINFO:
+				cmd << user.getNick() << server.getServername() << SERV_VERSION << "iow" << "imnst" << "kl";
+				break;
+			case RPL_ISUPPORT:
+				cmd << "CASEMAPPING=ascii" << "CHANMODES=,k,l,imnst"
+				<< "CHANTYPES=#" << "PREFIX=(ov)@+" << "are supported by this server";
+				break;
+			case RPL_USERHOST: {
+				cmd << user.getNick() << arg1;
+				break;
+			}
 			case RPL_ISON:
 				cmd << arg1;
 				break;
@@ -208,13 +230,13 @@ namespace IRC {
 				cmd << arg1 << "End of WHOWAS";
 				break;
 			case RPL_LISTSTART:
-				cmd << "ChannelUsers  Name";
+				cmd << arg1 << "Channel" << "Users  Name";
 				break;
 			case RPL_LIST:
-				cmd << arg1 << arg2 << arg3;
+				cmd << arg1 << arg2 << arg3 << arg4;
 				break;
 			case RPL_LISTEND:
-				cmd << "End of /LIST";
+				cmd << arg1 << "End of /LIST";
 				break;
 			case RPL_CHANNELMODEIS:
 				cmd << arg1 << ("+" + arg2);
@@ -242,10 +264,10 @@ namespace IRC {
 				cmd << arg1 << "End of /WHO list";
 				break;
 			case RPL_NAMREPLY:
-				cmd << arg1 << arg2 << arg3 << arg4;
+				cmd << user.getNick() << arg1 << arg2 << arg3 ;
 				break;
 			case RPL_ENDOFNAMES:
-				cmd << arg1 << arg2 << "End of /NAMES list";
+				cmd << arg1 << "End of /NAMES list";
 				break;
 			case RPL_LINKS:
 				cmd << arg1 << arg2 << (arg3 + " " + arg4);
@@ -363,22 +385,48 @@ namespace IRC {
 			case RPL_UMODEIS:
 				cmd << arg1;
 				break;
-			case RPL_LUSERCLIENT:
-				cmd << ("There are " + arg1 + " users and " + arg2 +
-						" invisible on " + arg3 + " servers");
+			case RPL_LUSERCLIENT: {
+				size_t i_c = 0;
+				for (std::list<Client>::iterator it = server.clients.begin(); it != server.clients.end(); ++it) {
+					if (it->isFlag(UMODE_INVIS)) ++i_c;
+				}
+				std::stringstream smsg;
+				smsg << "There are" << server.clients.size() << " users and " << i_c << " invisible on 1 servers";
+				cmd << user.getNick() << smsg.str();
 				break;
-			case RPL_LUSEROP:
-				cmd << arg1 << "operator(s) online";
+			}
+			case RPL_LUSEROP: {
+				size_t i_c = 0;
+				for (std::list<Client>::iterator it = server.clients.begin(); it != server.clients.end(); ++it) {
+					if (it->isFlag(UMODE_OPER)) ++i_c;
+				}
+				std::stringstream smsg;
+				smsg << i_c;
+				cmd << user.getNick() << smsg.str() << "operator(s) online";
 				break;
-			case RPL_LUSERUNKNOWN:
-				cmd << arg1 << "unknown connection(s)";
+			}
+			case RPL_LUSERUNKNOWN: {
+				size_t i_c = 0;
+				for (std::list<Client>::iterator it = server.clients.begin(); it != server.clients.end(); ++it) {
+					if (!it->isFlag(UMODE_REGISTERED)) ++i_c;
+				}
+				std::stringstream smsg;
+				smsg << i_c;
+				cmd << user.getNick() << smsg.str() << "unknown connection(s)";
 				break;
-			case RPL_LUSERCHANNELS:
-				cmd << arg1 << "channels formed";
+			}
+			case RPL_LUSERCHANNELS: {
+				std::stringstream smsg;
+				smsg << server.channels.size();
+				cmd << user.getNick() << smsg.str() << "channels formed";
 				break;
-			case RPL_LUSERME:
-				cmd << ("I have " + arg1 + " clients and " + arg2 + " servers");
+			}
+			case RPL_LUSERME: {
+				std::stringstream smsg;
+				smsg << server.clients.size();
+				cmd << ("I have " + smsg.str() + " clients and 1 servers");
 				break;
+			}
 			case RPL_ADMINME:
 				cmd << arg1 << "Administrative info";
 				break;

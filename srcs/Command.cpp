@@ -87,8 +87,22 @@ IRC::Command::Command(std::string const& message): valid(true) {
 
 	IRC::Command::Command(const std::string &prefix, const std::string &command, const std::vector<std::string> &params)
 			: prefix(prefix), command(command), params(params), valid(true) {}
-	IRC::Command::Command(const std::string &prefix, const std::string &command)
-			: prefix(prefix), command(command), params(std::vector<std::string>()), valid(true) {}
+//	IRC::Command::Command(const std::string &prefix, const std::string &command)
+//			: prefix(prefix), command(command), params(std::vector<std::string>()), valid(true) {}
+
+	Command::Command(const std::string &prefix, const std::string &command, const std::string &arg1,
+					 const std::string &arg2, const std::string &arg3, const std::string &arg4)
+					 : prefix(prefix), command(command), params(std::vector<std::string>()), valid(true) {
+		if (!arg1.empty())
+			params.push_back(arg1);
+		if (!arg2.empty())
+			params.push_back(arg2);
+		if (!arg3.empty())
+			params.push_back(arg3);
+		if (!arg4.empty())
+			params.push_back(arg4);
+	}
+
 
 	IRC::Command::~Command() {}
 

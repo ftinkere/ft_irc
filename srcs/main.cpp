@@ -1,8 +1,8 @@
 
 
-#include "../includes/ListenSocket.hpp"
+#include "ListenSocket.hpp"
 
-#define PORT "9034"   // порт, который мы слушаем
+#define PORT "6667"   // порт, который мы слушаем
 
 int main(int argc, char *argv[])
 {

@@ -30,7 +30,7 @@ namespace IRC {
 		return (confs);
 	}
 
-	ListenSocket::ListenSocket(const char *port) : Socket(port), read_fds(master) {
+	ListenSocket::ListenSocket(const char *port) : Socket(port), read_fds(master), creation_time(time(NULL)) {
 		commands[CMD_PASS] = &cmd_pass;
 		commands[CMD_NICK] = &cmd_nick;
 		commands[CMD_USER] = &cmd_user;
@@ -49,6 +49,10 @@ namespace IRC {
 		commands[CMD_OPER] = &cmd_oper;
 		commands[CMD_KILL] = &cmd_kill;
 		commands[CMD_ADMIN] = &cmd_admin;
+		commands[CMD_PING] = &cmd_ping;
+		commands[CMD_PONG] = &cmd_pong;
+
+
 		Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
 		Channel::modes.insert(std::make_pair(INVIT, Channel::I));
 		Channel::modes.insert(std::make_pair(MODES, Channel::M));
@@ -143,6 +147,7 @@ namespace IRC {
 				this->clients.back().host = ipv4;
 			}
 			this->clients.back().login_time = time(NULL);
+			this->clients.back().last_pingpong = time(NULL);
 			std::cout << "New connection from "
 					  << ipv4 << " : " << this->clients.back().host
 					  << " on fd " << fd_new
@@ -154,6 +159,8 @@ namespace IRC {
 		char buffer[BUFFER_SIZE] = {0};
 		ssize_t bytesRead;
 
+		std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(fd));
+
 		if ((bytesRead = recv(fd, buffer, BUFFER_SIZE - 1, MSG_PEEK)) <= 0) { // получена ошибка или соединение закрыто клиентом
 			if (bytesRead == 0) {
 				// соединение закрыто
@@ -162,9 +169,7 @@ namespace IRC {
 				std::cerr << "Error recieve on fd " << fd << std::endl;
 				std::cerr << "\t" << errno << ": " << strerror(errno) << std::endl;
 			}
-//			quit_client(fd);
-			std::list<Client>::iterator it = std::find_if(clients.begin(), clients.end(), is_fd(fd));
-			it->disconnect();
+			client->disconnect();
 		} else { // у нас есть какие-то данные от клиента
 
 			while ((bytesRead = recv(fd, buffer, BUFFER_SIZE - 1, 0)) > 0) {
@@ -190,8 +195,8 @@ namespace IRC {
 				buffers.at(fd).replace(buffers[fd].find("\r\n"), 2, "\n");
 			}
 
-			std::cout << "[DEBUG]: buffer: " << std::endl
-			<< buffers[fd] << " EOF" << std::endl;
+//			std::cout << "[DEBUG]: buffer: " << std::endl
+//			<< buffers[fd] << " EOF" << std::endl;
 
 			std::vector<std::string> msgs = split(buffers[fd], '\n');
 
@@ -202,11 +207,11 @@ namespace IRC {
 				buffers.at(fd).clear();
 			}
 
-			std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(fd));
 			for (std::vector<std::string>::iterator it = msgs.begin(); it != msgs.end(); ++it) {
-				std::cout << *it << " ";
 				if (!it->empty()) {
-					std::cout << "[DEBUG]: before parse: " << *it << std::endl;
+					if (!client->pinged)
+						client->last_pingpong = time(NULL);
+					std::cout << "[DEBUG]: cmd: " << *it << std::endl;
 					Command cmd(*it);
 					cmd.exec(*client, *this);
 				}
@@ -239,17 +244,23 @@ namespace IRC {
 		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
 			if (!it->isFlag(UMODE_REGISTERED)
-				&& it->login_time + this->registration_timeout - time(NULL) <= 0) {
+			&& it->login_time + this->registration_timeout <= time(NULL)) {
 				// reply timeout
-				{
-					Command cmd("", "ERROR");
-					cmd << "Registration timeout";
-					send_command(cmd, it->getFd());
-				}
+				send_command(Command("", "ERROR", "Registration timeout"), *it);
 				it->disconnect();
-//				quit_client(it->getFd());
-//				break;
-			} else if (FD_ISSET(it->getFd(), &read_fds)) {
+				continue;
+			} else if (it->isFlag(UMODE_REGISTERED)
+			&& !it->pinged && it->last_pingpong + this->ping_period <= time(NULL)) {
+				send_command(*it, CMD_PING, it->getNick());
+				it->pinged = true;
+				it->last_pingpong = time(NULL);
+			} else if (it->isFlag(UMODE_REGISTERED)
+			&& it->pinged && it->last_pingpong + this->pong_timeout <= time(NULL)) {
+				send_command(Command("", "ERROR", "Ping timeout"), *it);
+				it->disconnect();
+				continue;
+			}
+			if (FD_ISSET(it->getFd(), &read_fds)) {
 				handle_chat(it->getFd());
 			}
 		}
@@ -300,7 +311,7 @@ namespace IRC {
 		for (std::list<std::string>::iterator it = cl->getChannels().begin();
 			 it != cl->getChannels().end(); ++it) {
 			channels[*it].erase_client(*cl); //удаляем из всех групп
-			Command quit(cl->get_full_name(), CMD_QUIT);
+			Command quit(cl->get_full_name(), CMD_QUIT, cl->getNick());
 			for (std::set<Client *>::iterator itc = channels[*it].users.begin();
 				 itc != channels[*it].users.end(); ++itc) {
 				this->send_command(quit, (*itc)->getFd());
@@ -438,6 +449,16 @@ namespace IRC {
 	void ListenSocket::send_command(const Command &command, int fd) {
 		std::string message = command.to_string();
 		send(fd, message.c_str(), message.size(), 0);
+	}
+
+	void ListenSocket::send_command(const Client &client, const std::string &cmd, const std::string &arg1,
+									const std::string &arg2, const std::string &arg3, const std::string &arg4) {
+		send_command(Command(getServername(), cmd, arg1, arg2, arg3, arg4), client.getFd());
+	}
+
+	void ListenSocket::send_command(int fd, const std::string &cmd, const std::string &arg1,
+									const std::string &arg2, const std::string &arg3, const std::string &arg4) {
+		send_command(Command(getServername(), cmd, arg1, arg2, arg3, arg4), fd);
 	}
 
 

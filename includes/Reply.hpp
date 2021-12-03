@@ -127,6 +127,13 @@
 #define RPL_ADMINLOC1			257
 #define RPL_ADMINLOC2			258
 #define RPL_ADMINEMAIL			259
+
+#define RPL_WELCOME				001
+#define RPL_YOURHOST			002
+#define RPL_CREATED				003
+#define RPL_MYINFO				004
+#define RPL_ISUPPORT			005
+
 namespace IRC {
     class Client;
     class ListenSocket;

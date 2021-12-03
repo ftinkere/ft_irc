@@ -39,9 +39,11 @@ namespace IRC {
 		bool to_disconnect;
 
 		time_t login_time;
+		time_t last_pingpong;
+		bool pinged;
 
-		Client() : fd(-1), flags(0), to_disconnect(false) {}
-		Client(int fd) : fd(fd), flags(0), to_disconnect(false) {}
+		Client() : fd(-1), flags(0), to_disconnect(false), pinged(false) {}
+		Client(int fd) : fd(fd), flags(0), to_disconnect(false), pinged(false) {}
 
 		virtual ~Client() {}
 

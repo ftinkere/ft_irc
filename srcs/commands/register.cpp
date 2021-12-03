@@ -69,11 +69,11 @@ namespace IRC {
 		std::vector<std::string> const &param = cmd.getParams(); //параметры
 		size_t len = param.size(); //длина параметров
 		if (param.empty() || param[0].empty()) {
-			sendError(client, server, ERR_NORECIPIENT, cmd.getCommand(), "");
+			sendError(client, server, ERR_NORECIPIENT, cmd.getCommand());
 			return;
 		}
 		if (len < 2) {
-			sendError(client, server, ERR_NOTEXTTOSEND, "", "");
+			sendError(client, server, ERR_NOTEXTTOSEND);
 			return;
 		}
 
@@ -334,8 +334,8 @@ namespace IRC {
 				sendReply(client, server, RPL_TOPIC, chans[i], chan.getTopic());
 			}
 //			sendReply(client, server, RPL_NAMREPLY, chans[i], chan.get_names());
-			sendReply(client, server, RPL_NAMREPLY, client.getNick(), chan.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], chan.get_names());
-			sendReply(client, server, RPL_ENDOFNAMES, client.getNick(), chans[i]);
+			sendReply(client, server, RPL_NAMREPLY,chan.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], chan.get_names());
+			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
 
 //            if (i < keys.size())
 //            {
@@ -514,6 +514,7 @@ namespace IRC {
 			count = 1;
 		}
 		size_t len = chans.size();
+		sendReply(client, server, RPL_LISTSTART, client.getNick());
 		for (int i = 0; i < len; ++i) {
 			if (server.channels.find(chans[i]) == server.channels.end()) {
 				continue;
@@ -527,8 +528,8 @@ namespace IRC {
 			}
 			//остановился здесь
 //			sendReply(client, server, RPL_NAMREPLY, chans[i], channel.get_names());
-			sendReply(client, server, RPL_NAMREPLY, client.getNick(), channel.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], channel.get_names());
-			sendReply(client, server, RPL_ENDOFNAMES, client.getNick(), chans[i]);
+			sendReply(client, server, RPL_NAMREPLY, channel.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], channel.get_names());
+			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
 		}
 		if (count == 1)// если мы не выводили тзбранные каналы
 		{
@@ -540,7 +541,7 @@ namespace IRC {
 				}
 			}
 //			sendReply(client, server, RPL_NAMREPLY, "No channels", cl);
-			sendReply(client, server, RPL_NAMREPLY, client.getNick(), "-", "NoChannels", cl);
+			sendReply(client, server, RPL_NAMREPLY, "-", "NoChannels", cl);
 			sendReply(client, server, RPL_ENDOFNAMES, "NoChannels");
 		}
 	}
@@ -577,10 +578,10 @@ namespace IRC {
 //				chans[i].clear();
 			std::stringstream ss;
 			ss << channel.users.size();
-			sendReply(client, server, RPL_LIST, chans[i], ss.str(), channel.getTopic());
+			sendReply(client, server, RPL_LIST, client.getNick(), chans[i], ss.str(), channel.getTopic());
 
 		}
-		sendReply(client, server, RPL_LISTEND);
+		sendReply(client, server, RPL_LISTEND, client.getNick());
 	}
 
 	void cmd_invite(Command const &cmd, Client &client, ListenSocket &server) {
@@ -995,4 +996,26 @@ namespace IRC {
 		sendReply(client, server, RPL_ADMINLOC2, server.admin["adminNickname"]);
 		sendReply(client, server, RPL_ADMINEMAIL, server.admin["adminEmail"]);
 	}
+
+	void cmd_ping(Command const &cmd, Client &client, ListenSocket &server) {
+		std::vector<std::string> const& params = cmd.getParams(); //параметры
+
+		if (params.empty()) {
+			sendError(client, server, ERR_NEEDMOREPARAMS, CMD_PING);
+			return;
+		}
+		server.send_command(client, CMD_PONG, params[0]);
+	}
+
+	void cmd_pong(Command const &cmd, Client &client, ListenSocket &server) {
+		std::vector<std::string> const& params = cmd.getParams(); //параметры
+
+		if (params.empty()) {
+			sendError(client, server, ERR_NEEDMOREPARAMS, CMD_PING);
+			return;
+		}
+		client.last_pingpong = time(NULL);
+		client.pinged = false;
+	}
+
 }

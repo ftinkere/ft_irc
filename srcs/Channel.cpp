@@ -38,8 +38,12 @@ namespace IRC {
 		for (std::set<std::string const*>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
 			ret += '@' + **it + ' ';
 		}
+		for (std::set<std::string const *>::const_iterator it = voiced.begin(); it != voiced.end(); ++it) {
+			if (opers.find(*it) == opers.end())
+				ret += '+' + **it + ' ';
+		}
 		for (std::set<Client *>::const_iterator it = users.begin(); it != users.end(); ++it) {
-			if (opers.find(&(*it)->getNick()) == opers.end()) {
+			if (opers.find(&(*it)->getNick()) == opers.end() && voiced.find(&(*it)->getNick()) == voiced.end()) {
 				if (!(*it)->isFlag(UMODE_INVIS)) { //если ник видимый
 					ret += (*it)->getNick() + ' ';
 				}

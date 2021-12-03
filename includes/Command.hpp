@@ -28,7 +28,10 @@ namespace IRC {
 	public:
 		Command(std::string const &message);
 		Command(const std::string &prefix, const std::string &command, const std::vector<std::string> &params);
-		Command(const std::string &prefix, const std::string &command);
+//		Command(const std::string &prefix, const std::string &command);
+		Command(const std::string &prefix, const std::string &command,
+				const std::string &arg1 = "", const std::string &arg2 = "",
+				const std::string &arg3 = "", const std::string &arg4 = "");
 
 		virtual ~Command();
 

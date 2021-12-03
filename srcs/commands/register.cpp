@@ -88,7 +88,8 @@ namespace IRC {
 			Command cmd(client.get_full_name(), CMD_PRIVMSG);
 			// TODO: fix to channel and list (#chan or user1,user2)
 			// privmsg #chan,nick
-			cmd << clients[i]->getNick() << msg;
+//			cmd << clients[i]->getNick() << msg;
+			cmd << cmd.getParams()[0] << msg;
 			server.send_command(cmd, clients[i]->getFd());
 //			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
 			if (!clients[i]->getAway().empty())
@@ -310,7 +311,7 @@ namespace IRC {
 			return;
 		}
 
-		std::vector<std::string> chans = Channel::split(params[0], ',');
+		std::vector<std::string> chans = split(params[0], ',');
 		size_t len = chans.size();
 		for (int i = 0; i < len; ++i) {
 			if (server.channels.find(chans[i]) == server.channels.end()) {
@@ -411,7 +412,7 @@ namespace IRC {
 		// NAMES
 		// NAMES #c1,#c2
 		if (!params.empty()) {
-			chans = Channel::split(params[0], ',');
+			chans = split(params[0], ',');
 		} else {//если нет каналов выводим все
 			for (std::map<std::string, Channel>::iterator it = server.channels.begin();
 				 it != server.channels.end(); ++it)
@@ -456,7 +457,7 @@ namespace IRC {
 		int count = 0;
 
 		if (!params.empty()) {
-			chans = Channel::split(params[0], ',');
+			chans = split(params[0], ',');
 		} else { //если нет каналов выводим все
 			for (std::map<std::string, Channel>::iterator it = server.channels.begin();
 				 it != server.channels.end(); ++it)
@@ -543,8 +544,8 @@ namespace IRC {
 		}
 		// KICK #c nick1,nick2
 		// KICK #c1,#c2, nick1,nick2
-		chans = Channel::split(params[0], ',');
-		nicks = Channel::split(params[1], ',');
+		chans = split(params[0], ',');
+		nicks = split(params[1], ',');
 		size_t len = nicks.size();
 		for (int i = 0; i < chans.size(); ++i) {
 			if (server.channels.find(chans[i]) == server.channels.end()) {

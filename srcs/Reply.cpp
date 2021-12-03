@@ -6,7 +6,7 @@
 
 namespace IRC {
 
-	int sendError(const Client &user, ListenSocket &server, int err, const std::string &arg1, const std::string &arg2) {
+	void sendError(const Client &user, ListenSocket &server, int err, const std::string &arg1, const std::string &arg2) {
 //		std::string msg = ":" + server.getServername() + " ";
 		std::stringstream ss;
 		ss << err;
@@ -151,19 +151,17 @@ namespace IRC {
 				cmd << "Cant change mode for other users";
 				break;
 			default:
-				cmd << "UNKNOWN ERROR";
-				break;
+				return;
 		}
 //		send(user.getFd(), msg.c_str(), msg.size(), 0);
 		server.send_command(cmd, user.getFd());
-		return (-1);
 	}
 
-	int sendReply(const Client &user, ListenSocket &server, int rpl,
-				  const std::string &arg1, const std::string &arg2,
-				  const std::string &arg3, const std::string &arg4,
-				  const std::string &arg5, const std::string &arg6,
-				  const std::string &arg7, const std::string &arg8) {
+	void sendReply(const Client &user, ListenSocket &server, int rpl,
+				   const std::string &arg1, const std::string &arg2,
+				   const std::string &arg3, const std::string &arg4,
+				   const std::string &arg5, const std::string &arg6,
+				   const std::string &arg7, const std::string &arg8) {
 		std::stringstream ss;
 		ss << rpl;
 
@@ -396,9 +394,8 @@ namespace IRC {
 			default:
 				cmd << "UNKNOWN REPLY";
 //				break;
-				return 0;
+				return;
 		}
 		server.send_command(cmd, user.getFd());
-		return 0;
 	}
 }

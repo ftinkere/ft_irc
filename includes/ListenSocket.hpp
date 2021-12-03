@@ -12,7 +12,7 @@
 
 #define WITMSG -1
 
-#define BUFFER_SIZE 513
+#define BUFFER_SIZE 1025
 
 namespace IRC {
     class Channel;
@@ -47,10 +47,10 @@ namespace IRC {
 //        char *ipv4;
 
         void check_connections(void);
-        in_addr &get_in_addr(struct sockaddr *sa);
+        static in_addr &get_in_addr(struct sockaddr *sa);
         char* recieve_ip(struct sockaddr_storage &remoteaddr);
         void new_client();
-        void handle_chat(int const& fd);
+        void handle_chat(int const& fd, std::vector<int>& to_del);
 		int handle_message(const char *buf, Client *client);
 
 	public:

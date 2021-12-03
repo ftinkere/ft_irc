@@ -42,19 +42,7 @@ IRC::Command::Command(std::string const& message): valid(true) {
 			std::string::size_type command_end = message.find_first_of(' ', pos);
 
 			if (command_end == std::string::npos) {
-				if (message.find_first_of('\r') == std::string::npos) {
-					command_end = message.find_first_of('\n', pos);
-					if (command_end == std::string::npos) {
-						valid = false;
-						return;
-					}
-				} else {
-					command_end = message.find_first_of('\n', pos) - 1;
-					if (command_end == std::string::npos || message[command_end] != '\r') {
-						valid = false;
-						return;
-					}
-				}
+				command_end = message.size();
 			}
 			command = message.substr(pos, command_end - pos);
 			std::string buf;
@@ -76,11 +64,9 @@ IRC::Command::Command(std::string const& message): valid(true) {
 				}
 				pos = space_pos + 1;
 			}
-			if (pos < message.length() && message[pos] != '\n' && message[pos] != '\r') {
+			if (pos < message.length() && message[pos] != '\n') {
 				std::string::size_type offset = 0;
 				if (message[message.length() - 1] == '\n')
-					++offset;
-				if (message.length() > 1 && message[message.length() - 2] == '\r')
 					++offset;
 				if (message[pos] == ':')
 					++pos;
@@ -135,6 +121,9 @@ IRC::Command::Command(std::string const& message): valid(true) {
 	}
 
 	void IRC::Command::exec(Client & client, ListenSocket & server) const {
+		if (!valid) {
+			return;
+		}
 		std::map<std::string, ListenSocket::cmd>::const_iterator it;
 		std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
 		it = commands.find(command);

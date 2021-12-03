@@ -26,6 +26,8 @@
 //проверка названия канала
 namespace IRC{
 
+	std::vector<std::string> split(const std::string &s, char delim);
+
 	class Channel {
 	private:
 		std::string	name;
@@ -45,7 +47,6 @@ namespace IRC{
 		virtual ~Channel() {};
 
 		static bool check_name(std::string const& name);
-		static std::vector<std::string> split(const std::string &s, char delim);
 
 		const std::string& getName() const { return name; };
 
@@ -86,7 +87,5 @@ namespace IRC{
 		};
 
 		static std::map<const char, enum model> modes;
-	private:
-		static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 	};
 }

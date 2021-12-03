@@ -36,10 +36,12 @@ namespace IRC {
 		std::string away;
 		std::string host;
 
+		bool to_disconnect;
+
 		time_t login_time;
 
-		Client();
-		Client(int fd) : fd(fd), flags(0) {}
+		Client() : fd(-1), flags(0), to_disconnect(false) {}
+		Client(int fd) : fd(fd), flags(0), to_disconnect(false) {}
 
 		virtual ~Client() {}
 
@@ -52,6 +54,7 @@ namespace IRC {
 		// if (getFlags() & UMODE_REGISTERED)
 		int getFlags() const { return flags; }
 		int isFlag(int flag) const { return flags & flag; }
+		void disconnect() { this->to_disconnect = true; }
 
 		const std::string &getNick() const { return nick; }
 		void setNick(const std::string &nick) { Client::nick = nick; }

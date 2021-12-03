@@ -242,10 +242,10 @@ namespace IRC {
 				cmd << arg1 << "End of /WHO list";
 				break;
 			case RPL_NAMREPLY:
-				cmd << arg1 << arg2;
+				cmd << arg1 << arg2 << arg3 << arg4;
 				break;
 			case RPL_ENDOFNAMES:
-				cmd << arg1 << "End of /NAMES list";
+				cmd << arg1 << arg2 << "End of /NAMES list";
 				break;
 			case RPL_LINKS:
 				cmd << arg1 << arg2 << (arg3 + " " + arg4);

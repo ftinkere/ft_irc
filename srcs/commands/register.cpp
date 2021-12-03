@@ -59,7 +59,8 @@ namespace IRC {
 	}
 
 	void cmd_quit(Command const &cmd, Client &client, ListenSocket &server) {
-		server.quit_client(client.getFd());
+//		server.quit_client(client.getFd());
+		client.disconnect();
 		std::cout << "[DEBUG]: " << client.nick << "!" << client.user << "@" << client.host << " " << cmd.getCommand()
 				  << ": " << cmd.getParams()[0] << std::endl;
 	}
@@ -86,12 +87,8 @@ namespace IRC {
 		}
 		for (int i = 0; i < clients.size(); ++i) { //отправляем
 			Command cmd(client.get_full_name(), CMD_PRIVMSG);
-			// TODO: fix to channel and list (#chan or user1,user2)
-			// privmsg #chan,nick
-//			cmd << clients[i]->getNick() << msg;
-			cmd << cmd.getParams()[0] << msg;
+			cmd << param[0] << msg;
 			server.send_command(cmd, clients[i]->getFd());
-//			sendReply(server.getServername(), *clients[i], RPL_AWAY, clients[i]->getNick(), msg, "", "", "", "", "", "");
 			if (!clients[i]->getAway().empty())
 				sendReply(client, server, RPL_AWAY, clients[i]->getNick(), clients[i]->getAway());
 		}
@@ -240,8 +237,9 @@ namespace IRC {
 			if (!chan.getTopic().empty()) {
 				sendReply(client, server, RPL_TOPIC, chans[i], chan.getTopic());
 			}
-			sendReply(client, server, RPL_NAMREPLY, chans[i], chan.get_names());
-			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
+//			sendReply(client, server, RPL_NAMREPLY, chans[i], chan.get_names());
+			sendReply(client, server, RPL_NAMREPLY, client.getNick(), chan.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], chan.get_names());
+			sendReply(client, server, RPL_ENDOFNAMES, client.getNick(), chans[i]);
 
 //            if (i < keys.size())
 //            {
@@ -432,8 +430,9 @@ namespace IRC {
 				continue;
 			}
 			//остановился здесь
-			sendReply(client, server, RPL_NAMREPLY, chans[i], channel.get_names());
-			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
+//			sendReply(client, server, RPL_NAMREPLY, chans[i], channel.get_names());
+			sendReply(client, server, RPL_NAMREPLY, client.getNick(), channel.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], channel.get_names());
+			sendReply(client, server, RPL_ENDOFNAMES, client.getNick(), chans[i]);
 		}
 		if (count == 1)// если мы не выводили тзбранные каналы
 		{
@@ -444,8 +443,9 @@ namespace IRC {
 					cl += (*it).getNick() + " ";
 				}
 			}
-			sendReply(client, server, RPL_NAMREPLY, "No channels", cl, "", "", "", "", "", "");
-			sendReply(client, server, RPL_ENDOFNAMES, "No channels", "", "", "", "", "", "", "");
+//			sendReply(client, server, RPL_NAMREPLY, "No channels", cl);
+			sendReply(client, server, RPL_NAMREPLY, client.getNick(), "-", "NoChannels", cl);
+			sendReply(client, server, RPL_ENDOFNAMES, "NoChannels");
 		}
 	}
 
@@ -635,7 +635,7 @@ namespace IRC {
 //			size_t res = mod->second;
 			std::map<const char, enum Channel::model>::iterator it = Channel::modes.find(params[1][1]);
 			if (params[1].size() != 2 || it == Channel::modes.end()) {
-				sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
+				sendError(client, server, ERR_UNKNOWNMODE, params.size() > 1 ? params[1] : "", params[0]); //если не подходит мод
 				return;
 			}
 			enum Channel::model mod = it->second;
@@ -881,7 +881,8 @@ namespace IRC {
 			sendError(client, server, ERR_CANTKILLSERVER, "", "");
 			return;
 		}
-		server.quit_client(to->getFd());
+//		server.quit_client(to->getFd());
+		to->disconnect();
 	}
 
 	void cmd_admin(Command const &cmd, Client &client, ListenSocket &server) {

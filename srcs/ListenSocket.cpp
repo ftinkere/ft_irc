@@ -150,7 +150,7 @@ namespace IRC {
 		}
 	}
 
-	void ListenSocket::handle_chat(int const &fd, std::vector<int> &to_del) {
+	void ListenSocket::handle_chat(int const &fd) {
 		char buffer[BUFFER_SIZE] = {0};
 		ssize_t bytesRead;
 
@@ -163,7 +163,8 @@ namespace IRC {
 				std::cerr << "\t" << errno << ": " << strerror(errno) << std::endl;
 			}
 //			quit_client(fd);
-			to_del.push_back(fd);
+			std::list<Client>::iterator it = std::find_if(clients.begin(), clients.end(), is_fd(fd));
+			it->disconnect();
 		} else { // у нас есть какие-то данные от клиента
 
 			while ((bytesRead = recv(fd, buffer, BUFFER_SIZE - 1, 0)) > 0) {
@@ -184,6 +185,9 @@ namespace IRC {
 			}
 			while (buffers[fd].find("\n\r") != std::string::npos) {
 				buffers.at(fd).replace(buffers[fd].find("\n\r"), 2, "\n");
+			}
+			while (buffers[fd].find("\r\n") != std::string::npos) {
+				buffers.at(fd).replace(buffers[fd].find("\r\n"), 2, "\n");
 			}
 
 			std::cout << "[DEBUG]: buffer: " << std::endl
@@ -232,7 +236,6 @@ namespace IRC {
 			new_client();
 		}
 
-		std::vector<int> to_del;
 		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
 			if (!it->isFlag(UMODE_REGISTERED)
@@ -243,16 +246,18 @@ namespace IRC {
 					cmd << "Registration timeout";
 					send_command(cmd, it->getFd());
 				}
-				to_del.push_back(it->getFd());
+				it->disconnect();
 //				quit_client(it->getFd());
 //				break;
 			} else if (FD_ISSET(it->getFd(), &read_fds)) {
-				handle_chat(it->getFd(), to_del);
+				handle_chat(it->getFd());
 			}
 		}
 
-		for (std::vector<int>::reverse_iterator it = to_del.rbegin(); it != to_del.rend(); ++it) {
-			quit_client(*it);
+		for (std::list<Client>::reverse_iterator it = clients.rbegin(); it != clients.rend(); ++it) {
+			if (it->to_disconnect) {
+				quit_client(it->getFd());
+			}
 		}
 
 //        int listener = Socket::getListener();

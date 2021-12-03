@@ -50,7 +50,7 @@ namespace IRC {
         static in_addr &get_in_addr(struct sockaddr *sa);
         char* recieve_ip(struct sockaddr_storage &remoteaddr);
         void new_client();
-        void handle_chat(int const& fd, std::vector<int>& to_del);
+        void handle_chat(int const& fd);
 		int handle_message(const char *buf, Client *client);
 
 	public:

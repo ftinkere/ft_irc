@@ -82,7 +82,3 @@ void IRC::Client::eraseChannel(std::string const& flag) //удаляем кан�
 {
     channels.remove(flag);
 }
-
-IRC::Client::Client() {
-
-}

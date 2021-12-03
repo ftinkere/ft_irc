@@ -30,7 +30,7 @@ namespace IRC{
 
         // избегаем ошибки «address already in use»
             setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-            fcntl(listener, F_SETFL, O_NONBLOCK);
+//            fcntl(listener, F_SETFL, O_NONBLOCK);
 
             if (bind(listener, bindp->ai_addr, bindp->ai_addrlen) < 0) {
                 close(listener);

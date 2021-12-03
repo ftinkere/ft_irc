@@ -5,20 +5,21 @@ namespace IRC {
 
 	Channel::Channel(std::string const &name) :
 			name(name),
-			flags(CMODE_NOEXT | CMODE_MODER),
+			flags(CMODE_NOEXT),
 			limit(0) {}
 
-	bool Channel::check_name(std::string const &name) {
-		if (name[0] != '#')
-			return false;
-		return true;
-	}
+    bool Channel::check_name(std::string const& name) {
+        if (name[0] != '#')
+            return false;
+        return true;
+    }
 
-	void Channel::add_memeber(Client &member) {
+    void Channel::add_memeber(Client & member)
+    {
 //        base[member] = 0;
 		if (users.empty()) {
 			opers.insert(&member.getNick());
-			voiced.insert(&member.getNick());
+            voiced.insert(&member.getNick());
 		}
 		users.insert(&member);
 	}
@@ -34,7 +35,7 @@ namespace IRC {
 	std::string Channel::get_names() const {
 		std::string ret;
 
-		for (std::set<std::string const *>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
+		for (std::set<std::string const*>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
 			ret += '@' + **it + ' ';
 		}
 		for (std::set<Client *>::const_iterator it = users.begin(); it != users.end(); ++it) {

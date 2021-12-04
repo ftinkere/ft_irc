@@ -52,6 +52,7 @@ namespace IRC {
     }
 
     bool priv_need_channel(Channel *channel, Client const &client, ListenSocket &server, std::string const &chani)
+    //функция проверки прав оператора канала
     {
         if (channel->opers.find(&(client.getNick())) == channel->opers.end()) {
             sendError(client, server, ERR_CHANOPRIVSNEEDED, chani);
@@ -61,6 +62,7 @@ namespace IRC {
     }
 
     bool check_nick(std::list<Client>::iterator& it, Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chani)
+    //проверка ника в канале
     {
         if (it == server.clients.end()) {//если нет ника
             sendError(client, server, ERR_NOSUCHNICK, nick);
@@ -74,6 +76,7 @@ namespace IRC {
     }
 
     bool erase_member(Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chani)
+    //удаление члена канала
     {
         std::list<Client>::iterator it = std::find_if(server.clients.begin(), server.clients.end(),
                                                       is_nickname(nick));
@@ -86,5 +89,162 @@ namespace IRC {
         channel->voiced.erase(&(*it).getNick());
         it->eraseChannel(chani);
         return true;
+    }
+
+    void mode_table(Channel *channel, Client const &client, ListenSocket &server, std::string const &chani)
+    //вывод модов канала или ника
+    {
+        std::string res;
+        if (channel->isFlag(CMODE_INVITE))
+        {
+            res.push_back(' ');
+            res.push_back(INVIT);
+        }
+        if (channel->isFlag(CMODE_MODER))
+        {
+            res.push_back(' ');
+            res.push_back(MODES);
+        }
+        if (channel->isFlag(CMODE_SECRET))
+        {
+            res.push_back(' ');
+            res.push_back(SECRET);
+        }
+        if (channel->isFlag(CMODE_NOEXT))
+        {
+            res.push_back(' ');
+            res.push_back(SPEAK);
+        }
+        if (channel->isFlag(CMODE_TOPIC)){
+            res.push_back(' ');
+            res.push_back(TOPIC);
+        }
+        if (!channel->getKey().empty()){
+            res.push_back(' ');
+            res.push_back(KEY);
+            res.push_back('=');
+            res += channel->getKey();
+        }
+        if (channel->getLimit() > 0){
+            res.push_back(' ');
+            res.push_back(LEN);
+            res.push_back('=');
+            res += std::to_string(channel->getLimit());
+        }
+        sendReply(server.getServername(), client, RPL_CHANNELMODEIS, chani, res);
+    }
+
+    void mode_flags(Channel *channel, int flag, int const &sign)
+    //удаление члена канала
+    {
+        if (sign == '-') {
+            if (channel->isFlag(flag))
+                channel->zeroFlag(flag);
+        } else {
+            if (!channel->isFlag(flag))
+                channel->setFlag(flag);
+        }
+    }
+
+    Client* check_mode_nick(Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chan, size_t const &len)
+    //проверка ника в канале для модов
+    {
+        if (len < 3) {
+            sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
+            return NULL;
+        }
+        std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
+                                                                                      is_nickname(nick));
+        if (to == server.clients.end()) {
+            sendError(client, server, ERR_NOSUCHNICK, nick);
+            return NULL;
+        }
+        if (channel->users.find(&(*to)) == channel->users.end()) {
+            sendError(client, server, ERR_USERNOTINCHANNEL, nick, chan);
+            return NULL;
+        }
+        return &(*to);
+    }
+
+    void mode_flags_chan_nick(Client *moded, std::set<std::string const*> &members, int const &sign)
+    //добавляем в базу ник
+    {
+        std::string const &nick = moded->getNick();
+        if (sign == '+') {
+            if (members.find(&nick) != members.end()) {
+                return;
+            } else {
+                members.insert(&nick);
+        }
+        } else {
+            if (members.find(&nick) == members.end()) {
+                return;
+            } else {
+                members.erase(&nick);
+            }
+        }
+    }
+
+    bool mode_flags_keys(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan)
+    //добавляем в базу ключ
+    {
+        if (len < 3) {
+            sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
+            return false;
+        }
+        if (sign == '+') 
+        {
+            if (!channel->getKey().empty()) {
+                sendError(client, server, ERR_KEYSET, chan);
+                return false;
+            } else {
+                channel->setKey(nick);
+            }
+        } else {
+            channel->clearKey();
+        }
+        return true;
+    }
+
+    bool mode_flags_limit(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan)
+    //добавляем в базу лимита
+    {
+        if (len < 3) {
+            sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
+            return false;
+        }
+        if (sign == '+') {
+            int a = check_num(nick.c_str());//переводим в число
+            if (a > 0) {
+                channel->setLimit(a);
+            }
+            else
+                channel->clearLimit();
+        } else {
+            channel->clearLimit();
+        }
+        return true;
+    }
+
+    void mode_table_nicks(Client *oclient, Client const &client, ListenSocket &server)
+    //посмотреть сетку модов ника
+    {
+        std::string res = "r";
+        if (oclient->isFlag(UMODE_NOPER))
+            res += " o";
+        if (oclient->isFlag(UMODE_INVIS))
+            res += " i";
+        if (oclient->isFlag(UMODE_WALLOPS))
+            res += " w";
+        sendReply(server.getServername(), client, RPL_UMODEIS, res);
+    }
+
+    void mode_flags_nick(Client *oclient, int flag, int const &sign)
+    //установка флага клиента
+    {
+        if (sign == '+')
+            oclient->setFlag(flag);
+       else
+            oclient->zeroFlag(flag);
     }
 }

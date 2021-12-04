@@ -13,7 +13,7 @@ namespace IRC {
 #define CMD_OPER "OPER"
 #define CMD_QUIT "QUIT"
 
-#define CMD_JOIN "JOIN" //доделать
+#define CMD_JOIN "JOIN"
 #define CMD_PART "PART"
 #define CMD_MODE "MODE"
 #define CMD_TOPIC "TOPIC"

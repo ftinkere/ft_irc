@@ -27,7 +27,15 @@ namespace IRC {
     bool priv_need_channel(Channel *channel, Client const &client, ListenSocket &server, std::string const &chani);
     bool check_nick(std::list<Client>::iterator& it, Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chani);
     bool erase_member(Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chani);
-
+    void mode_table(Channel *channel, Client const &client, ListenSocket &server, std::string const &chani);
+    void mode_flags(Channel *channel, int flag, int const &sign);
+    Client* check_mode_nick(Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chan, size_t const &len);
+    void mode_flags_chan_nick(Client *moded, std::set<std::string const*> &members, int const &sign);
+    bool mode_flags_keys(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan);
+    bool mode_flags_limit(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan);
+    void mode_table_nicks(Client *oclient, Client const &client, ListenSocket &server);
+    void mode_flags_nick(Client *oclient, int flag, int const &sign);
+    
     //Массив комманд сервера
     void cmd_pass(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_nick(Command const &cmd, Client &client, ListenSocket &server);

@@ -5,10 +5,10 @@
 #include "commands.hpp"
 
 //TODO:прописать ответ на  выполненые задачи для сервера
-//TODO:сделать ли проверку на инвизбл join????
 //TODO:сделать ответы клиентам при выполнении команд
 //TODO: подумать над порядком whowas
 //TODO: добавление в базу админа и сервера
+//TODO: ping pong
 
 namespace IRC {
 
@@ -17,10 +17,10 @@ namespace IRC {
 	void cmd_pass(Command const &cmd, Client &client, ListenSocket &server) {
 		std::vector<std::string> const &params = cmd.getParams();
 		if (params.empty()) {
-			sendError(client, server, ERR_NEEDMOREPARAMS, "PASS", "");
+			sendError(client, server, ERR_NEEDMOREPARAMS, "PASS");
 			// reply not args
 		} else if (client.isFlag(UMODE_REGISTERED)) {
-			sendError(client, server, ERR_ALREADYREGISTRED, "", "");
+			sendError(client, server, ERR_ALREADYREGISTRED);
 		} else {
 		    client.setPass(params[0]);
 		}

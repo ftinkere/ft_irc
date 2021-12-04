@@ -9,75 +9,22 @@ namespace IRC {
     void cmd_join(Command const &cmd, Client &client, ListenSocket &server) {
         std::vector<std::string> const &params = cmd.getParams(); //параметры
         size_t len = params.size();
-        //        std::vector<std::string> chani;
-        //        std::vector<std::string> keys;
         int res;
         int count = 0;
 
         if (params.empty()) {
-            sendError(client, server, ERR_NEEDMOREPARAMS, "JOIN", "");
+            sendError(client, server, ERR_NEEDMOREPARAMS, "JOIN");
             return;
         }
 
-        std::vector<std::string> chans;
-        {
-            std::istringstream stream(params[0]);
-            std::string line;
-            while (std::getline(stream, line, ',')) {
-                chans.push_back(line);
-            }
-        }
-
+        std::vector<std::string> chans = Channel::split(params[0], ',');//пилим каналы
         std::vector<std::string> keys;
         if (params.size() > 1) {
-            {
-                std::istringstream stream(params[1]);
-                std::string line;
-                while (std::getline(stream, line, ',')) {
-                    keys.push_back(line);
-                }
-            }
+            keys = Channel::split(params[1], ',');//пилим пароли
         }
-        for (int i = 0; i < chans.size(); ++i) {
-            keys.push_back("");
-        }
-
-        //        for (int i = 0; i < len; ++i) {
-        //            res = Channel::check_name(params[i]);
-        //            if (res == ERR_NAME)
-        //            {
-        //                sendError(client, server, ERR_NOSUCHCHANNEL, params[i], "");
-        //                // no such channel
-        //                return ;
-        //            }
-        //            else if (res == CHAN)
-        //            {
-        //                count++;
-        //                if (server.channels.find(params[i]) == server.channels.end())
-        //                {
-        //                    Channel channel;
-        //                    channel.setName(params[i]);
-        //                    server.channels.insert(std::make_pair(params[i], channel));
-        //                    channel.add_memeber(client);
-        //
-        //                }
-        //                chani.push_back(params[i]);
-        //
-        //            }
-        //            else
-        //            {
-        //                if (count < 1)
-        //                {
-        //                    //need more params
-        //                    sendError(client, server, ERR_NEEDMOREPARAMS, "JOIN", "");
-        //                    return ;
-        //                }
-        //                keys.push_back(params[i]);
-        //            }
-        //        }
         for (unsigned int i = 0; i < chans.size(); ++i) {
             if (!Channel::check_name(chans[i])) {
-                sendError(client, server, ERR_BADCHANMASK, chans[i], "");
+                sendError(client, server, ERR_BADCHANMASK, chans[i]);
                 continue;
             }
 
@@ -89,77 +36,24 @@ namespace IRC {
             std::string const &key = chan.getKey();
 
             if (!key.empty() && keys[i] != key) {
-                sendError(client, server, ERR_BADCHANNELKEY, chans[i], "");
+                sendError(client, server, ERR_BADCHANNELKEY, chans[i]);
                 continue;
             }
             if (chan.isFlag(CMODE_INVITE)) {
-                sendError(client, server, ERR_INVITEONLYCHAN, chans[i], "");
+                sendError(client, server, ERR_INVITEONLYCHAN, chans[i]);
                 continue;
             }
             if (!chan.check_limit()) {
-                sendError(client, server, ERR_CHANNELISFULL, chans[i], "");
+                sendError(client, server, ERR_CHANNELISFULL, chans[i]);
                 continue;
             }
             chan.add_memeber(client);
             client.setChannels(chans[i]);
 
-            sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], chan.get_names(), "", "", "", "", "", "");
-            sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i], "", "", "", "", "", "", "");
-
-            //            if (i < keys.size())
-            //            {
-            //                if (!key.empty())
-            //                {
-            //                    if (key == keys[i]){
-            //                        if (!(chan.getFlags() & CMODE_INVITE)) {
-            //                            if (chan.check_limit()) {
-            //								chan.add_memeber(client);
-            //                            } else{
-            //                                sendError(client, server, ERR_CHANNELISFULL, chans[i], "");
-            //                            }
-            //                        }
-            //                        else{
-            //                            sendError(client, server, ERR_INVITEONLYCHAN, chans[i], "");
-            //                            return;
-            //                        }
-            //                    }
-            //                    else{
-            //
-            //                        sendError(client, server, ERR_BADCHANNELKEY, chans[i], "");
-            //                        return;
-            //                        //no key
-            //                    }
-            //                }
-            //                else
-            //                {
-            //                    server.channels[chans[i]].add_memeber(client);
-            //                }
-            //            } else {
-            //                if (!(server.channels[chans[i]].getFlags() & CMODE_INVITE)) {
-            //                    if (server.channels[chans[i]].check_limit()) {
-            //                        server.channels[chans[i]].add_memeber(client);
-            //
-            //						for (std::set<std::string const*>::iterator it = server.channels[chans[i]].opers.begin(); it != server.channels[chans[i]].opers.end(); ++it) {
-            //							std::cout << "[DEBUG]: " << *it << ": " << *(*it) << std::endl;
-            //						}
-            //						for (std::set<Client const*>::iterator it = server.channels[chans[i]].users.begin(); it != server.channels[chans[i]].users.end(); ++it) {
-            //							std::cout << "[DEBUG]: " << (*it)->getFd() << " " << &(*it)->nick << ": " << (*it)->getNick() << std::endl;
-            //						}
-            //
-            //                    } else {
-            //                        sendError(client, server, ERR_CHANNELISFULL, chans[i], "");
-            //                    }
-            //                }
-            //                else {
-            //                    sendError(client, server, ERR_INVITEONLYCHAN, chans[i], "");
-            //                    return;
-            //                }
-            //            }
-            //        }
-            //ERR_INVITEONLYCHAN
-            //ERR_CHANNELISFULL
-            //RPL_TOPIC
-            //проверка на невидимость при отправке инфы вновь прибывшему
+            sendReply(server.getServername(), client, RPL_NAMREPLY, chans[i], chan.get_names());
+            sendReply(server.getServername(), client, RPL_ENDOFNAMES, chans[i]);
+            if (!chan.getTopic().empty())
+                sendReply(server.getServername(), client, RPL_TOPIC, chans[i], chan.getTopic());
         }
     }
 
@@ -263,12 +157,12 @@ namespace IRC {
         std::list<Client>::iterator it = std::find_if(server.clients.begin(), server.clients.end(),
                                                       is_nickname(nick));
         if (!check_nick(it, channel, client, server, nick, chani)) {return;}
-        if (!priv_need_channel(channel, client, server, nick)) {return;}
+        if (!priv_need_channel(channel, client, server, nick)) {return;}//проврека на права
 
         sendReply(server.getServername(), client, RPL_INVITING, chani, nick);
         sendReply(server.getServername(), *it, RPL_AWAY, client.getNick(), "you were invited to the channel");
         channel->add_memeber(*it);
-        it->setChannels(const_cast<std::string &>(chani));
+        it->setChannels(const_cast<std::string &>(chani));//добавляем канал в список каналов у клиента
     }
 
     void cmd_kick(Command const &cmd, Client &client, ListenSocket &server) {

@@ -432,15 +432,6 @@ namespace IRC {
 		}
 	}
 
-	Channel *IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client &feedback) {
-		std::map<std::string, Channel>::iterator it = channels.find(nick);
-		if (it == channels.end()) {
-			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
-			return (NULL);
-		}
-		return &(it->second);
-	}
-
 	void ListenSocket::send_command(const Command &command, const Client &client) {
 		send_command(command, client.getFd());
 	}

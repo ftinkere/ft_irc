@@ -21,9 +21,6 @@ namespace IRC {
 
 	class Client {
 	private:
-//		std::string pass;
-//		std::string nick;
-//		std::string user;
 		int fd;
 		int flags;
 		std::list<std::string> channels;
@@ -32,6 +29,8 @@ namespace IRC {
 		std::string user;
 		std::string away;
 		std::string host;
+        std::string mask;
+        std::string realname;
 
 	public:
 		time_t login_time;
@@ -60,8 +59,14 @@ namespace IRC {
 		const std::string &getPass() const { return pass; }
 		void setPass(const std::string &nick) { pass = nick; }
 
+        const std::string &getMask() const { return mask; }
+        void setMask() { mask = this->nick + "!" + this->user + "@" + this->host; }
+
 		const std::string &getUser() const { return user; }
 		void setUser(const std::string &user) { Client::user = user; }
+
+        const std::string &getReal() const { return realname; }
+        void setReal(const std::string &user) { realname = user; }
 
 		void setAway(const std::string &msg) { Client::away = msg; }
 		const std::string &getAway() const { return away; }
@@ -87,6 +92,14 @@ namespace IRC {
 		bool operator()(Client const& c) const { return nickname == c.getNick(); }
 	};
 
+    struct is_mask_s {
+        std::string mask;
+
+        explicit is_mask_s(std::string mask) : mask(mask) {};
+
+        bool operator()(Client const& c) const { return mask == c.getMask(); }
+    };
+
 	struct is_fd_s {
 		int fd;
 
@@ -107,6 +120,7 @@ namespace IRC {
 	is_nickname_s is_nickname(std::string nickname);
 	is_fd_s is_fd(int fd);
 	is_flag_s is_flag(int flag);
+    is_mask_s is_mask(std::string mask);
 
 
 

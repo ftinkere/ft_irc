@@ -9,6 +9,10 @@ IRC::is_nickname_s IRC::is_nickname(std::string nickname) {
 		return is_nickname_s(nickname);
 }
 
+IRC::is_mask_s IRC::is_mask(std::string mask) {
+    return is_mask_s(mask);
+}
+
 IRC::is_fd_s IRC::is_fd(int fd) {
 	return is_fd_s(fd);
 
@@ -26,6 +30,7 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	}
 	setFlag(UMODE_REGISTERED);
 	std::cout << "[DEBUG]: " << this->nick << "!" << this->user << "@" << this->host << " are registered." << std::endl;
+    this->setMask();//закидываем верхнюю строчку в структуру
 
 	sendReply(server.getServername(), *this, RPL_MOTDSTART, server.getServername(), "", "", "", "", "", "", "");
 	sendReply(server.getServername(), *this, RPL_MOTD, "Welcome! Ли сахлии-гар!", "", "", "", "", "", "", "");

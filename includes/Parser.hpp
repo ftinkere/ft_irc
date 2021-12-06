@@ -27,16 +27,16 @@ namespace IRC {
 #define CMD_WALLOPS "WALLOPS"
 #define CMD_AWAY "AWAY"
 
-#define CMD_WHOIS "WHOIS"
-#define CMD_WHOWAS "WHOWAS"
+#define CMD_WHOIS "WHOIS" //доделать
+#define CMD_WHOWAS "WHOWAS" //доделать
 
 #define CMD_KILL "KILL"
+#define CMD_ADMIN "ADMIN"
 #define CMD_PING "PING" //нет
 #define CMD_PONG "PONG" //нет
 
 //#define CMD_VERSION "VERSION"
 //#define CMD_TIME "TIME"
-#define CMD_ADMIN "ADMIN"
 //#define CMD_INFO "INFO"
 //#define CMD_REHASH "REHASH"
 //#define CMD_RESTART "RESTART"

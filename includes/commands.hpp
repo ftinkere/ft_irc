@@ -35,7 +35,8 @@ namespace IRC {
     bool mode_flags_limit(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan);
     void mode_table_nicks(Client *oclient, Client const &client, ListenSocket &server);
     void mode_flags_nick(Client *oclient, int flag, int const &sign);
-    
+    std::list<Client>::iterator check_mask_nick(int flag, std::string const &nick, Client &client, ListenSocket &server);
+
     //Массив комманд сервера
     void cmd_pass(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_nick(Command const &cmd, Client &client, ListenSocket &server);

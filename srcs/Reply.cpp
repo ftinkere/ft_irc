@@ -397,7 +397,7 @@ namespace IRC {
 				break;
 			default:
 				cmd << "UNKNOWN REPLY";
-				break; // TODO return
+				break;
 		}
 		std::string msg = cmd.to_string();
 		send(user.getFd(), msg.c_str(), msg.size(), 0);

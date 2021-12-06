@@ -244,7 +244,30 @@ namespace IRC {
     {
         if (sign == '+')
             oclient->setFlag(flag);
-       else
+        else
             oclient->zeroFlag(flag);
+    }
+
+    std::list<Client>::iterator check_mask_nick(int flag, std::string const &nick, Client &client, ListenSocket &server)
+    //ищем маску или ник
+    {
+        std::list<Client>::iterator it;
+        if (flag == ERR_CANTKILLSERVER) {
+            sendError(client, server, flag);
+            return server.clients.end();
+        }
+        else if(flag == RPL_WHOISSERVER){
+            sendReply(server.getServername(), client, flag, nick, server.getServername(), "Вот такой вот сервер");
+            sendReply(server.getServername(), client, RPL_ENDOFWHOIS, nick);
+            return server.clients.end();
+        }
+        else if (nick.find('@') != std::string::npos) {
+            it = std::find_if(server.clients.begin(), server.clients.end(),
+                              is_mask(nick));
+        }
+        else
+            it = std::find_if(server.clients.begin(), server.clients.end(),
+                              is_nickname(nick));
+        return it;
     }
 }

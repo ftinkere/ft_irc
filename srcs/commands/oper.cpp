@@ -3,7 +3,7 @@
 //
 
 #include "commands.hpp"
-//TODO: all
+
 namespace IRC {
 
     void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {
@@ -153,7 +153,7 @@ namespace IRC {
     void cmd_kill(Command const &cmd, Client &client, ListenSocket &server) {
         //TODO: что то сделать с комментом надо
         std::vector<std::string> const &params = cmd.getParams(); //параметры
-
+        std::list<Client>::iterator it;
         if (params.empty() || params.size() != 2) {
             sendError(client, server, ERR_NEEDMOREPARAMS, "KILL");
             return;
@@ -163,16 +163,12 @@ namespace IRC {
             sendError(client, server, ERR_NOPRIVILEGES);
             return;
         }
-        std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-                                                      is_nickname(params[0]));
-        if (to == server.clients.end()) {
+        it = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
+        if (it == server.clients.end()) {
             sendError(client, server, ERR_NOSUCHNICK, params[0]);
             return;
         }
-        if (params[0] == server.getServername()) {
-            sendError(client, server, ERR_CANTKILLSERVER);
-            return;
-        }
-        server.quit_client(to->getFd());
+
+        server.quit_client(it->getFd());
     }
 }

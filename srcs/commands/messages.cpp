@@ -17,6 +17,8 @@ namespace IRC {
             return;
         }
         std::vector<Client *> clients = server.find_clients(params[0], client); //ищем все ники
+        if (clients[0] == NULL)
+            return; //если сервер
         std::string msg;
 
         msg = choose_str(params, len, 1);//собираем параметры для отправки
@@ -37,6 +39,8 @@ namespace IRC {
         if (!len)
             return;
         std::vector<Client *> clients = server.find_clients(params[0], WITMSG, client); //ищем все ники
+        if (clients[0] == NULL)
+            return; //если сервер
         std::string msg;
 
         msg = choose_str(params, len, 1);//собираем параметры для отправки

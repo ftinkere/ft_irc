@@ -6,9 +6,8 @@
 
 //TODO:прописать ответ на  выполненые задачи для сервера
 //TODO:сделать ответы клиентам при выполнении команд
-//TODO: подумать над порядком whowas
-//TODO: добавление в базу админа и сервера
 //TODO: ping pong
+//TODO: разобраться с комментами
 
 namespace IRC {
 
@@ -51,6 +50,7 @@ namespace IRC {
 
 	void cmd_user(Command const &cmd, Client &client, ListenSocket &server) {
 		// check user
+        //TODO: обработать второй аргумент
 		std::vector<std::string> const &params = cmd.getParams();
 		if (params.empty() || params.size() < 4) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "USER");
@@ -58,6 +58,7 @@ namespace IRC {
 			sendError(client, server, ERR_ALREADYREGISTRED);
 		} else {
 		    client.setUser(params[0]);
+            client.setReal(params[3]);
 			client.try_register(server);
 		} // else reply not args
 	}

@@ -34,6 +34,7 @@ namespace IRC {
 		std::map<std::string, Channel> channels;
 		std::map<std::string, std::string> opers;
 		std::map<std::string, std::string> admin;
+		std::multimap<std::string, Client> base_client;
     private:
 
 		fd_set read_fds;

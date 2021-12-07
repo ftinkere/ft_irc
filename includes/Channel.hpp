@@ -32,11 +32,11 @@ namespace IRC{
 	private:
 		std::string	name;
 		int			flags;
-
-	public:
 		std::string	topic;
 		std::string	password;
 		int			limit;
+
+	public:
 
 		std::set<Client *>				users;
 		std::set<std::string const*>	voiced;

@@ -42,6 +42,9 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	pinged = false;
 	last_pingpong = time(NULL);
 
+    Client buf = *this;
+
+    server.base_client.insert(std::make_pair(this->nick,buf));//создаем неизменяемую базу клиентов
 	return true;
 }
 

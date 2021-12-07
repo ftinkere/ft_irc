@@ -27,23 +27,20 @@ namespace IRC {
 		int fd;
 		int flags;
 		std::list<std::string> channels;
-
-	public:
 		std::string pass;
 		std::string nick;
 		std::string user;
 		std::string realname;
 		std::string away;
 		std::string host;
-
 		bool to_disconnect;
-
 		time_t login_time;
 		time_t last_pingpong;
 		bool pinged;
+	public:
 
-		Client() : fd(-1), flags(0), to_disconnect(false), pinged(false) {}
-		Client(int fd) : fd(fd), flags(0), to_disconnect(false), pinged(false) {}
+		Client() : fd(-1), flags(UMODE_WALLOPS), to_disconnect(false), pinged(false) {}
+		Client(int fd) : fd(fd), flags(UMODE_WALLOPS), to_disconnect(false), pinged(false) {}
 
 		virtual ~Client() {}
 
@@ -58,8 +55,14 @@ namespace IRC {
 		int isFlag(int flag) const { return flags & flag; }
 		void disconnect() { this->to_disconnect = true; }
 
+		const std::string &getHost() const { return host; }
+		void setHost(const std::string &host) { this->host = host; }
+
 		const std::string &getNick() const { return nick; }
 		void setNick(const std::string &nick) { Client::nick = nick; }
+
+		const std::string &getPass() const { return pass; }
+		void setPass(const std::string &pass) { this->pass = pass; }
 
 		const std::string &getUser() const { return user; }
 		void setUser(const std::string &user) { Client::user = user; }
@@ -67,6 +70,8 @@ namespace IRC {
 		void setAway(const std::string &msg) { Client::away = msg; }
 		const std::string &getAway() const { return away; }
 		void clearAway() { Client::away.clear(); }
+
+		const time_t getTime() const { return login_time; }
 
 		std::list<std::string> &getChannels() { return channels; }
 		void addChannel(std::string const& flag) { channels.push_back(flag); }

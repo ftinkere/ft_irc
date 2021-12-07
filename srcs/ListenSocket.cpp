@@ -51,7 +51,9 @@ namespace IRC {
 		commands[CMD_ADMIN] = &cmd_admin;
 		commands[CMD_PING] = &cmd_ping;
 		commands[CMD_PONG] = &cmd_pong;
-
+		commands[CMD_WHOIS] = &cmd_whois;
+		commands[CMD_WALLOPS] = &cmd_wallops;
+		commands[CMD_WHOWAS] = &cmd_whowas;
 
 		Channel::modes.insert(std::make_pair(TOPIC, Channel::T));
 		Channel::modes.insert(std::make_pair(INVIT, Channel::I));
@@ -142,9 +144,9 @@ namespace IRC {
 			// TODO: errs
 
 			if (res == 0) {
-				this->clients.back().host = node;
+				this->clients.back().setHost(node);
 			} else {
-				this->clients.back().host = ipv4;
+			    this->clients.back().setHost(ipv4);
 			}
 			this->clients.back().login_time = time(NULL);
 			this->clients.back().last_pingpong = time(NULL);
@@ -413,14 +415,22 @@ namespace IRC {
 		std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(),
 													  is_nickname(nick));
 		if (it == this->clients.end()) {
-			sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
+			sendError(feedback, *this, ERR_NOSUCHNICK, nick);
 			return NULL;
 		}
-		if (feedback.getFlags() & UMODE_OPER) {
+		if (feedback.isFlag(UMODE_OPER)) {
 			return &(*it);
-		} else {
-			sendError(feedback, *this, ERR_USERSDONTMATCH, "",
-					  "");//если не опер то не можешь редактировать чужой ник
+		}
+		else if (flag == 1 && !(*it).isFlag(UMODE_INVIS))
+		{
+		    return &(*it);
+		}
+		else {
+			if ((*it).isFlag(UMODE_INVIS)){
+				sendError(feedback, *this, ERR_NOSUCHNICK, nick);
+				return NULL;
+			}
+			sendError(feedback, *this, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
 			return NULL;
 		}
 	}

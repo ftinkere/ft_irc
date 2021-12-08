@@ -1,11 +1,14 @@
 #pragma once
 
-#include <set>
-#include <map>
-#include <string>
+#ifndef IRC_CHANNEL_HPP
+#define IRC_CHANNEL_HPP
 
+#include "ListenSocket.hpp"
 #include "Client.hpp"
-#include "commands.hpp"
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 #define CMODE_INVITE 0x01 // +i
 #define CMODE_MODER 0x02      // +m
@@ -24,7 +27,8 @@
 #define LEN 'l'
 
 //проверка названия канала
-namespace IRC{
+namespace IRC {
+	class Client;
 
 	std::vector<std::string> split(const std::string &s, char delim);
 
@@ -67,8 +71,14 @@ namespace IRC{
 		void setTopic(const std::string & cl)  { topic = cl; }
 		void clearTopic()  { topic.clear(); }
 
+		bool isClient(Client const& client) const;
+		bool isClient(client_iter const& client) const;
+		bool isOper(Client const& client) const;
+		bool isOper(client_iter const& client) const;
+		bool isVoiced(Client const& client) const;
+		bool isVoiced(client_iter const& client) const;
 		void add_memeber(Client & member);
-		bool check_limit();
+		bool check_limit() const;
 
 		std::string get_names() const;
 
@@ -89,3 +99,5 @@ namespace IRC{
 		static std::map<const char, enum model> modes;
 	};
 }
+
+#endif

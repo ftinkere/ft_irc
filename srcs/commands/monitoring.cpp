@@ -3,6 +3,9 @@
 //
 
 #include "commands.hpp"
+#include <Reply.hpp>
+#include <algorithm>
+#include <sstream>
 //TODO: whois whowas
 namespace IRC {
 
@@ -16,9 +19,9 @@ namespace IRC {
         size_t len = 0;
 
         if (!params.empty()) {
-            chans = Channel::split(params[0], ',');
+            chans = split(params[0], ',');
             len = chans.size();
-            for (int i = 0; i < len; ++i){
+            for (int i = 0; i < len; ++i) { // TODO: ХУЙНЯ
                 it = server.channels.find(chans[i]);
                 if (it == server.channels.end())
                     continue;
@@ -34,8 +37,8 @@ namespace IRC {
             Channel &channel = (*vec_it)->second;
             if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end())
                 continue;
-            sendReply(server.getServername(), client, RPL_NAMREPLY, (*vec_it)->first, channel.get_names());
-            sendReply(server.getServername(), client, RPL_ENDOFNAMES, (*vec_it)->first);
+            sendReply(client, server, RPL_NAMREPLY, (*vec_it)->first, channel.get_names());
+            sendReply(client, server, RPL_ENDOFNAMES, (*vec_it)->first);
         }
         if (count == 1)
         {// если мы не выводили избранные каналы
@@ -46,8 +49,8 @@ namespace IRC {
                     cl += (*lst).getNick() + " ";
                 }
             }
-            sendReply(server.getServername(), client, RPL_NAMREPLY, "No channels", cl);
-            sendReply(server.getServername(), client, RPL_ENDOFNAMES, "No channels");
+            sendReply(client, server, RPL_NAMREPLY, "No channels", cl);
+            sendReply(client, server, RPL_ENDOFNAMES, "No channels");
         }
     }
 
@@ -60,10 +63,10 @@ namespace IRC {
             sendError(client, server, ERR_NOSUCHSERVER, params[0]);
             return;
         }
-        sendReply(server.getServername(), client, RPL_ADMINME, params[0]);
-        sendReply(server.getServername(), client, RPL_ADMINLOC1, server.admin["adminName"]);
-        sendReply(server.getServername(), client, RPL_ADMINLOC2, server.admin["adminNickname"]);
-        sendReply(server.getServername(), client, RPL_ADMINEMAIL, server.admin["adminEmail"]);
+        sendReply(client, server, RPL_ADMINME, params[0]);
+        sendReply(client, server, RPL_ADMINLOC1, server.admin["adminName"]);
+        sendReply(client, server, RPL_ADMINLOC2, server.admin["adminNickname"]);
+        sendReply(client, server, RPL_ADMINEMAIL, server.admin["adminEmail"]);
     }
 
     void cmd_whois(Command const &cmd, Client &client, ListenSocket &server) {
@@ -74,7 +77,7 @@ namespace IRC {
             sendError(client, server, ERR_NONICKNAMEGIVEN);
             return;
         }
-        std::vector<std::string> nicks = Channel::split(params[0], ',');
+        std::vector<std::string> nicks = split(params[0], ',');
         for (int i = 0; i < nicks.size(); ++i)
         {
             std::string nick = nicks[i];
@@ -98,17 +101,17 @@ namespace IRC {
                 else
                     chans_str += *chans + ' ';
             }
-            sendReply(server.getServername(), client, RPL_WHOISUSER, nick, find_client.getUser(), find_client.getHost(), "realname");
-            sendReply(server.getServername(), client, RPL_WHOISCHANNELS, nick, chans_str);
+            sendReply(client, server, RPL_WHOISUSER, nick, find_client.getUser(), find_client.getHost(), "realname");
+            sendReply(client, server, RPL_WHOISCHANNELS, nick, chans_str);
             if (!find_client.getAway().empty())
-                sendReply(server.getServername(), client, RPL_AWAY, nick, find_client.getAway());
-            if (find_client.isFlag(UMODE_NOPER))
-                sendReply(server.getServername(), client, RPL_WHOISOPERATOR, nick);
+                sendReply(client, server, RPL_AWAY, nick, find_client.getAway());
+            if (find_client.isFlag(UMODE_OPER))
+                sendReply(client, server, RPL_WHOISOPERATOR, nick);
             std::stringstream	regTime, onServer;
-            onServer << (time(0) - find_client.getTime());
-            regTime << find_client.getTime();
-            sendReply(server.getServername(), client, RPL_WHOISIDLE, nick, onServer.str(), regTime.str());
-            sendReply(server.getServername(), client, RPL_ENDOFWHOIS, nick);
+            onServer << (time(0) - find_client.getRegisterTime());
+            regTime << find_client.getRegisterTime();
+            sendReply(client, server, RPL_WHOISIDLE, nick, onServer.str(), regTime.str());
+            sendReply(client, server, RPL_ENDOFWHOIS, nick);
         }
     }
 
@@ -121,7 +124,7 @@ namespace IRC {
             sendError(client, server, ERR_NONICKNAMEGIVEN);
             return;
         }
-        std::vector<std::string> nicks = Channel::split(params[0], ',');
+        std::vector<std::string> nicks = split(params[0], ',');
         size_t limit = 1;
         for (int i = 0; i < nicks.size(); ++i)
         {
@@ -136,12 +139,12 @@ namespace IRC {
                 int j = 0;
                 for (std::multimap<std::string, Client>::iterator it = range.first; it != range.second && j < limit; ++it, ++j)
                 {
-                    sendReply(server.getServername(), client, RPL_WHOWASUSER, nick, it->second.getUser(), it->second.getHost(), "realname");
+                    sendReply(client, server, RPL_WHOWASUSER, nick, it->second.getUser(), it->second.getHost(), "realname");
                     loop = true;//если зашли в цикл значит такой ник есть
                 }
                 if (!loop)
                     sendError(client, server, ERR_WASNOSUCHNICK, nick);
-                sendReply(server.getServername(), client, RPL_ENDOFWHOWAS, nick);
+                sendReply(client, server, RPL_ENDOFWHOWAS, nick);
         }
     }
 }

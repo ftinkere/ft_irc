@@ -2,9 +2,11 @@
 // Created by Frey Tinkerer on 11/11/21.
 //
 
-#include <iostream>
-#include <algorithm>
 #include "Command.hpp"
+#include <Parser.hpp>
+#include <Reply.hpp>
+#include <algorithm>
+#include <iostream>
 
 namespace IRC {
 	char to_upper(char &c) {
@@ -138,20 +140,19 @@ IRC::Command::Command(std::string const& message): valid(true) {
 		if (!valid) {
 			return;
 		}
-		std::map<std::string, ListenSocket::cmd>::const_iterator it;
-		std::map<std::string, ListenSocket::cmd> const& commands = server.getCommands();
-		it = commands.find(command);
+		std::map<std::string, cmd> const& commands = server.getCommands();
+		cmd_const_iter it = commands.find(command);
 		if (!client.isFlag(UMODE_REGISTERED) && it == commands.end()) {
 			return;
 		} else if (client.isFlag(UMODE_REGISTERED) && it == commands.end()) {
 			sendError(client, server, ERR_UNKNOWNCOMMAND, command);
-		} if (!(client.getFlags() & UMODE_REGISTERED) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER)) {
+		} if (!(client.isFlag(UMODE_REGISTERED)) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER)) {
 			it->second(*this, client, server);
-		} else if (!(client.getFlags() & UMODE_REGISTERED) && it != commands.end()) {
+		} else if (!(client.isFlag(UMODE_REGISTERED)) && it != commands.end()) {
 			sendError(client, server, ERR_NOTREGISTERED);
-		} else if (client.getFlags() & UMODE_REGISTERED) {
+		} else if (client.isFlag(UMODE_REGISTERED)) {
 			it->second(*this, client, server);
-			std::cout << "|DEBUG| " << command << "!!!!" << std::endl;
+			std::cout << "[DEBUG] executed: " << command << std::endl;
 		}
 	}
 

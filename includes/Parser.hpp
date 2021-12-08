@@ -1,6 +1,7 @@
 //
 // Created by Frey Tinkerer on 11/11/21.
 //
+#pragma once
 
 #ifndef FT_IRC_PARSER_HPP
 #define FT_IRC_PARSER_HPP

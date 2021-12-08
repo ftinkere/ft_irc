@@ -4,6 +4,8 @@
 
 //#include <ListenSocket.hpp>
 #include "Client.hpp"
+#include <ListenSocket.hpp>
+#include <Reply.hpp>
 
 IRC::is_nickname_s IRC::is_nickname(std::string nickname) {
 		return is_nickname_s(nickname);
@@ -30,11 +32,11 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	setFlag(UMODE_REGISTERED);
 	std::cout << "[DEBUG]: " << this->nick << "!" << this->user << "@" << this->host << " are registered." << std::endl;
 
-	sendReply(*this, server, RPL_WELCOME);
-	sendReply(*this, server, RPL_YOURHOST);
-	sendReply(*this, server, RPL_CREATED);
-	sendReply(*this, server, RPL_MYINFO);
-	sendReply(*this, server, RPL_ISUPPORT);
+	int rpls[] = {RPL_WELCOME, RPL_YOURHOST, RPL_CREATED, RPL_MYINFO, RPL_ISUPPORT, RPL_LUSERCLIENT, RPL_LUSEROP, RPL_LUSERUNKNOWN, RPL_LUSERCHANNELS, RPL_LUSERME};
+	for(int* it = rpls; it < rpls + 10; ++it) {
+		sendReply(*this, server, *it);
+	}
+
 	sendReply(*this, server, RPL_MOTDSTART, server.getServername());
 	sendReply(*this, server, RPL_MOTD, "Welcome! Ли сахлии-гар!");
 	sendReply(*this, server, RPL_ENDOFMOTD);

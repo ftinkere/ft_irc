@@ -1,17 +1,16 @@
 //
 // Created by Frey Tinkerer on 11/11/21.
 //
+#pragma once
 
 #ifndef FT_IRC_COMMAND_HPP
 #define FT_IRC_COMMAND_HPP
 
+#include "Client.hpp"
 #include <string>
 #include <vector>
-//#include "Reply.hpp"
-//#include "Client.hpp"
-//#include "ListenSocket.hpp"
-//#include "Parser.hpp"
-#include "commands.hpp"
+
+//#include "commands.hpp"
 
 namespace IRC {
 

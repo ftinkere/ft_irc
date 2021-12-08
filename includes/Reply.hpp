@@ -1,6 +1,7 @@
 //
 // Created by Luci Atkins on 11/20/21.
 //
+#pragma once
 
 #ifndef FT_IRC_REPLY_HPP
 #define FT_IRC_REPLY_HPP
@@ -137,8 +138,8 @@
 namespace IRC {
     class Client;
     class ListenSocket;
-    void sendError(const Client &user, ListenSocket & server, int err, const std::string &arg1 = "", const std::string &arg2 = "");
-    void sendReply(const Client &user, ListenSocket & server, int rpl,
+    void sendError(const Client &user, ListenSocket const& server, int err, const std::string &arg1 = "", const std::string &arg2 = "");
+    void sendReply(const Client &user, ListenSocket const& server, int rpl,
 				   const std::string &arg1 = "", const std::string &arg2 = "",
 				   const std::string &arg3 = "", const std::string &arg4 = "",
 				   const std::string &arg5 = "", const std::string &arg6 = "",

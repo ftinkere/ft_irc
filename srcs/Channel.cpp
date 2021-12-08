@@ -1,11 +1,12 @@
 #include "Channel.hpp"
+#include <sstream>
 
 namespace IRC {
 	std::map<const char, enum Channel::model> Channel::modes;
 
 	Channel::Channel(std::string const &name) :
 			name(name),
-			flags(CMODE_NOEXT),
+			flags(CMODE_NOEXT | CMODE_TOPIC),
 			limit(0) {}
 
     bool Channel::check_name(std::string const& name) {
@@ -24,7 +25,7 @@ namespace IRC {
 		users.insert(&member);
 	}
 
-	bool Channel::check_limit() {
+	bool Channel::check_limit() const {
 		if (limit > 0) {
 			if (users.size() == limit)
 				return false;
@@ -71,8 +72,15 @@ namespace IRC {
 		users.erase(&cl);
 	}
 
+	bool Channel::isClient(Client const& client) const { return users.find(const_cast<Client*>(&client)) != users.end(); };
+	bool Channel::isClient(client_iter const& client) const { return users.find(&(*client)) != users.end(); };
+	bool Channel::isOper(Client const& client) const { return opers.find(&client.getNick()) != opers.end(); };
+	bool Channel::isOper(client_iter const& client) const { return opers.find(&client->getNick()) != opers.end(); };
+	bool Channel::isVoiced(Client const& client) const { return voiced.find(&client.getNick()) != voiced.end(); };
+	bool Channel::isVoiced(client_iter const& client) const { return voiced.find(&client->getNick()) != voiced.end(); };
+
 	Channel::Channel() :
-			flags(CMODE_NOEXT),
+			flags(CMODE_NOEXT | CMODE_TOPIC),
 			limit(0) {}
 
 }

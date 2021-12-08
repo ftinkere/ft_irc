@@ -1,13 +1,17 @@
 //
 // Created by Frey Tinkerer on 11/11/21.
 //
+#pragma once
 
 #ifndef FT_IRC_CLIENT_HPP
 #define FT_IRC_CLIENT_HPP
 
-#include <string>
+
+#include "ListenSocket.hpp"
 #include <list>
-#include "commands.hpp"
+#include <string>
+//#include "commands.hpp"
+
 
 #define UMODE_REGISTERED 0x01 // +r
 #define UMODE_OPER 0x02       // +o
@@ -15,9 +19,6 @@
 #define UMODE_WALLOPS 0x08    // +w
 
 namespace IRC {
-
-	class ListenSocket;
-//	class Command;
 
 	class Client {
 	private:
@@ -34,9 +35,10 @@ namespace IRC {
 		std::string away;
 		std::string host;
 		bool to_disconnect;
-		time_t login_time;
+		time_t register_time;
 		time_t last_pingpong;
 		bool pinged;
+
 	public:
 
 		Client() : fd(-1), flags(UMODE_WALLOPS), to_disconnect(false), pinged(false) {}
@@ -53,25 +55,38 @@ namespace IRC {
 		// if (getFlags() & UMODE_REGISTERED)
 		int getFlags() const { return flags; }
 		int isFlag(int flag) const { return flags & flag; }
+
 		void disconnect() { this->to_disconnect = true; }
+		const bool isDisconect() { return to_disconnect; }
 
 		const std::string &getHost() const { return host; }
 		void setHost(const std::string &host) { this->host = host; }
 
 		const std::string &getNick() const { return nick; }
-		void setNick(const std::string &nick) { Client::nick = nick; }
+		void setNick(const std::string &nick) { this->nick = nick; }
+
+		const std::string &getRealname() const { return realname; }
+		void setRealname(const std::string &realname) { this->realname = realname; }
 
 		const std::string &getPass() const { return pass; }
 		void setPass(const std::string &pass) { this->pass = pass; }
 
 		const std::string &getUser() const { return user; }
-		void setUser(const std::string &user) { Client::user = user; }
+		void setUser(const std::string &user) { this->user = user; }
 
-		void setAway(const std::string &msg) { Client::away = msg; }
+		void setAway(const std::string &msg) { this->away = msg; }
 		const std::string &getAway() const { return away; }
-		void clearAway() { Client::away.clear(); }
+		void clearAway() { this->away.clear(); }
 
-		const time_t getTime() const { return login_time; }
+		const time_t getRegisterTime() const { return register_time; }
+		void touchRegisterTime() { this->register_time = time(NULL); }
+
+		const time_t getPingpongTime() const { return last_pingpong; }
+		void touchPingpongTime() { this->last_pingpong = time(NULL); }
+
+		const bool isPinged() { return pinged; };
+		void setPinged() { this->pinged = true; };
+		void unsetPinged() { this->pinged = false; };
 
 		std::list<std::string> &getChannels() { return channels; }
 		void addChannel(std::string const& flag) { channels.push_back(flag); }

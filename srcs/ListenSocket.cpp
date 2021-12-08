@@ -1,9 +1,12 @@
-#include <fstream>
-#include <sstream>
+#include "types.hpp"
 #include "ListenSocket.hpp"
-#include <set>
+#include <Parser.hpp>
+#include <Reply.hpp>
 #include <algorithm>
 #include <fcntl.h>
+#include <fstream>
+#include <set>
+#include <sstream>
 
 namespace IRC {
 
@@ -148,10 +151,10 @@ namespace IRC {
 			} else {
 			    this->clients.back().setHost(ipv4);
 			}
-			this->clients.back().login_time = time(NULL);
-			this->clients.back().last_pingpong = time(NULL);
+			this->clients.back().touchRegisterTime();
+			this->clients.back().touchPingpongTime();
 			std::cout << "New connection from "
-					  << ipv4 << " : " << this->clients.back().host
+					  << ipv4 << " : " << this->clients.back().getHost()
 					  << " on fd " << fd_new
 					  << std::endl;
 		}
@@ -211,8 +214,8 @@ namespace IRC {
 
 			for (std::vector<std::string>::iterator it = msgs.begin(); it != msgs.end(); ++it) {
 				if (!it->empty()) {
-					if (!client->pinged)
-						client->last_pingpong = time(NULL);
+					if (!client->isPinged())
+						client->touchPingpongTime();
 					std::cout << "[DEBUG]: cmd: " << *it << std::endl;
 					Command cmd(*it);
 					cmd.exec(*client, *this);
@@ -246,18 +249,18 @@ namespace IRC {
 		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
 			if (!it->isFlag(UMODE_REGISTERED)
-			&& it->login_time + this->registration_timeout <= time(NULL)) {
+			&& it->getRegisterTime() + this->registration_timeout <= time(NULL)) {
 				// reply timeout
 				send_command(Command("", "ERROR", "Registration timeout"), *it);
 				it->disconnect();
 				continue;
 			} else if (it->isFlag(UMODE_REGISTERED)
-			&& !it->pinged && it->last_pingpong + this->ping_period <= time(NULL)) {
+			&& !it->isPinged() && it->getPingpongTime() + this->ping_period <= time(NULL)) {
 				send_command(*it, CMD_PING, it->getNick());
-				it->pinged = true;
-				it->last_pingpong = time(NULL);
+				it->setPinged();
+				it->touchPingpongTime();
 			} else if (it->isFlag(UMODE_REGISTERED)
-			&& it->pinged && it->last_pingpong + this->pong_timeout <= time(NULL)) {
+			&& it->isPinged() && it->getPingpongTime() + this->pong_timeout <= time(NULL)) {
 				send_command(Command("", "ERROR", "Ping timeout"), *it);
 				it->disconnect();
 				continue;
@@ -268,7 +271,7 @@ namespace IRC {
 		}
 
 		for (std::list<Client>::reverse_iterator it = clients.rbegin(); it != clients.rend(); ++it) {
-			if (it->to_disconnect) {
+			if (it->isDisconect()) {
 				quit_client(it->getFd());
 			}
 		}
@@ -334,7 +337,7 @@ namespace IRC {
 
 	const std::string &ListenSocket::getPassword() const { return password; }
 
-	const std::map<std::string, ListenSocket::cmd> &ListenSocket::getCommands() const { return commands; }
+	const std::map<std::string, cmd> &ListenSocket::getCommands() const { return commands; }
 
 	std::vector<Client *> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client const &feedback) {
 		std::vector<Client *> ret;
@@ -444,11 +447,11 @@ namespace IRC {
 		return &(it->second);
 	}
 
-	void ListenSocket::send_command(const Command &command, const Client &client) {
+	void ListenSocket::send_command(const Command &command, const Client &client) const {
 		send_command(command, client.getFd());
 	}
 
-	void ListenSocket::send_command(const Command &command, const std::string &nickname) {
+	void ListenSocket::send_command(const Command &command, const std::string &nickname) const {
 		std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(),
 															is_nickname(nickname));
 		if (to != getClients().end()) {
@@ -456,21 +459,61 @@ namespace IRC {
 		}
 	}
 
-	void ListenSocket::send_command(const Command &command, int fd) {
+	void ListenSocket::send_command(const Command &command, int fd) const {
 		std::string message = command.to_string();
 		send(fd, message.c_str(), message.size(), 0);
 	}
 
 	void ListenSocket::send_command(const Client &client, const std::string &cmd, const std::string &arg1,
-									const std::string &arg2, const std::string &arg3, const std::string &arg4) {
+									const std::string &arg2, const std::string &arg3, const std::string &arg4) const {
 		send_command(Command(getServername(), cmd, arg1, arg2, arg3, arg4), client.getFd());
 	}
 
 	void ListenSocket::send_command(int fd, const std::string &cmd, const std::string &arg1,
-									const std::string &arg2, const std::string &arg3, const std::string &arg4) {
+									const std::string &arg2, const std::string &arg3, const std::string &arg4) const {
 		send_command(Command(getServername(), cmd, arg1, arg2, arg3, arg4), fd);
 	}
 
+	bool ListenSocket::isChannelExist(const std::string &chan) const {
+		return channels.find(chan) != channels.end();
+	}
+
+	bool ListenSocket::isChannelExist(channel_iter const& chan) const {
+		return chan != channels.end();
+	}
+
+	void ListenSocket::addNewChannel(const std::string &chan) {
+		if (!isChannelExist(chan)) {
+			channels.insert(std::make_pair(chan, Channel(chan)));
+		}
+	}
+
+	channel_iter ListenSocket::getChannel(const std::string &chan) {
+		return channels.find(chan);
+	}
+
+	client_iter ListenSocket::getClient(std::string const& nick) {
+		return std::find_if(clients.begin(), clients.end(), is_nickname(nick));
+	}
+
+	client_iter ListenSocket::getClient(int fd) {
+		return std::find_if(clients.begin(), clients.end(), is_fd(fd));
+	}
+
+	client_const_iter ListenSocket::getClient(std::string const& nick) const {
+		return std::find_if(clients.begin(), clients.end(), is_nickname(nick));
+	}
+
+	client_const_iter ListenSocket::getClient(int fd) const {
+		return std::find_if(clients.begin(), clients.end(), is_fd(fd));
+	}
+
+	bool ListenSocket::isClientExist(const std::string &nick) const {
+		return getClient(nick) != clients.end();
+	}
+	bool ListenSocket::isClientExist(const client_iter &it) const {
+		return it != clients.end();
+	}
 
 }
 

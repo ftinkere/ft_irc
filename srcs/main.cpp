@@ -1,5 +1,3 @@
-
-
 #include "ListenSocket.hpp"
 
 #define PORT "6667"   // порт, который мы слушаем

@@ -4,16 +4,17 @@
 
 #include <iomanip>
 #include "Reply.hpp"
+#include <sstream>
 
 namespace IRC {
 
-	void sendError(const Client &user, ListenSocket &server, int err, const std::string &arg1, const std::string &arg2) {
+	void sendError(const Client &user, ListenSocket const& server, int err, const std::string &arg1, const std::string &arg2) {
 //		std::string msg = ":" + server.getServername() + " ";
 		std::stringstream ss;
 		ss << err;
 //		msg += ss.str();
 
-		Command cmd(server.getServername(), ss.str());
+		Command cmd(server.getServername(), ss.str(), user.getNick());
 
 		switch (err) {
 			case ERR_NOSUCHNICK:
@@ -158,7 +159,7 @@ namespace IRC {
 		server.send_command(cmd, user.getFd());
 	}
 
-	void sendReply(const Client &user, ListenSocket &server, int rpl,
+	void sendReply(const Client &user, ListenSocket const& server, int rpl,
 				   const std::string &arg1, const std::string &arg2,
 				   const std::string &arg3, const std::string &arg4,
 				   const std::string &arg5, const std::string &arg6,
@@ -166,31 +167,31 @@ namespace IRC {
 		std::stringstream ss;
 		ss << std::setfill('0') << std::setw(3) << rpl;
 
-		Command cmd(server.getServername(), ss.str());
+		Command cmd(server.getServername(), ss.str(), user.getNick());
 
 		switch (rpl) {
 			case RPL_WELCOME:
-				cmd << user.getNick() << ("Welcome to the FT Network, " + user.get_full_name());
+				cmd << ("Welcome to the FT Network, " + user.get_full_name());
 				break;
 			case RPL_YOURHOST:
-				cmd << user.getNick() << ("Your host is " + server.getServername() + ", running version " + SERV_VERSION);
+				cmd << ("Your host is " + server.getServername() + ", running version " + SERV_VERSION);
 				break;
 			case RPL_CREATED: {
 				struct tm time = *localtime(&server.getCreationTime());
 				char buf[100] = {0};
 				strftime(buf, 99, "%d-%m-%Y %H-%M-%S", &time);
-				cmd << user.getNick() << ("This server was created " + std::string(buf));
+				cmd << ("This server was created " + std::string(buf));
 				break;
 			}
 			case RPL_MYINFO:
-				cmd << user.getNick() << server.getServername() << SERV_VERSION << "iow" << "imnst" << "kl";
+				cmd << server.getServername() << SERV_VERSION << "iow" << "imnst" << "kl";
 				break;
 			case RPL_ISUPPORT:
 				cmd << "CASEMAPPING=ascii" << "CHANMODES=,k,l,imnst"
 				<< "CHANTYPES=#" << "PREFIX=(ov)@+" << "are supported by this server";
 				break;
 			case RPL_USERHOST: {
-				cmd << user.getNick() << arg1;
+				cmd << arg1;
 				break;
 			}
 			case RPL_ISON:
@@ -230,13 +231,13 @@ namespace IRC {
 				cmd << arg1 << "End of WHOWAS";
 				break;
 			case RPL_LISTSTART:
-				cmd << arg1 << "Channel" << "Users  Name";
+				cmd << "Channel" << "Users  Name";
 				break;
 			case RPL_LIST:
-				cmd << arg1 << arg2 << arg3 << arg4;
+				cmd << arg1 << arg2 << arg3;
 				break;
 			case RPL_LISTEND:
-				cmd << arg1 << "End of /LIST";
+				cmd << "End of /LIST";
 				break;
 			case RPL_CHANNELMODEIS:
 				cmd << arg1 << ("+" + arg2);
@@ -264,7 +265,7 @@ namespace IRC {
 				cmd << arg1 << "End of /WHO list";
 				break;
 			case RPL_NAMREPLY:
-				cmd << user.getNick() << arg1 << arg2 << arg3 ;
+				cmd << arg1 << arg2 << arg3 ;
 				break;
 			case RPL_ENDOFNAMES:
 				cmd << arg1 << "End of /NAMES list";
@@ -386,39 +387,41 @@ namespace IRC {
 				cmd << arg1;
 				break;
 			case RPL_LUSERCLIENT: {
-				size_t i_c = 0;
-				for (std::list<Client>::iterator it = server.clients.begin(); it != server.clients.end(); ++it) {
-					if (it->isFlag(UMODE_INVIS)) ++i_c;
+				size_t users_c = 0;
+				size_t inv_c = 0;
+				for (client_const_iter it = server.clients.begin(); it != server.clients.end(); ++it) {
+					if (it->isFlag(UMODE_REGISTERED)) ++users_c;
+					if (it->isFlag(UMODE_INVIS)) ++inv_c;
 				}
 				std::stringstream smsg;
-				smsg << "There are" << server.clients.size() << " users and " << i_c << " invisible on 1 servers";
-				cmd << user.getNick() << smsg.str();
+				smsg << "There are " << users_c << " users and " << inv_c << " invisible on 1 servers";
+				cmd << smsg.str();
 				break;
 			}
 			case RPL_LUSEROP: {
 				size_t i_c = 0;
-				for (std::list<Client>::iterator it = server.clients.begin(); it != server.clients.end(); ++it) {
+				for (client_const_iter it = server.clients.begin(); it != server.clients.end(); ++it) {
 					if (it->isFlag(UMODE_OPER)) ++i_c;
 				}
 				std::stringstream smsg;
 				smsg << i_c;
-				cmd << user.getNick() << smsg.str() << "operator(s) online";
+				cmd << smsg.str() << "operator(s) online";
 				break;
 			}
 			case RPL_LUSERUNKNOWN: {
 				size_t i_c = 0;
-				for (std::list<Client>::iterator it = server.clients.begin(); it != server.clients.end(); ++it) {
+				for (client_const_iter it = server.clients.begin(); it != server.clients.end(); ++it) {
 					if (!it->isFlag(UMODE_REGISTERED)) ++i_c;
 				}
 				std::stringstream smsg;
 				smsg << i_c;
-				cmd << user.getNick() << smsg.str() << "unknown connection(s)";
+				cmd << smsg.str() << "unknown connection(s)";
 				break;
 			}
 			case RPL_LUSERCHANNELS: {
 				std::stringstream smsg;
 				smsg << server.channels.size();
-				cmd << user.getNick() << smsg.str() << "channels formed";
+				cmd << smsg.str() << "channels formed";
 				break;
 			}
 			case RPL_LUSERME: {

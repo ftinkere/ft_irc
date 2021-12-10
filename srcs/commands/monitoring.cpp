@@ -37,7 +37,7 @@ namespace IRC {
             Channel &channel = (*vec_it)->second;
             if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end())
                 continue;
-            sendReply(client, server, RPL_NAMREPLY, (*vec_it)->first, channel.get_names());
+            sendReply(client, server, RPL_NAMREPLY, (*vec_it)->first, (*vec_it)->second.isFlag(CMODE_SECRET) ? "@" : "=", channel.get_names());
             sendReply(client, server, RPL_ENDOFNAMES, (*vec_it)->first);
         }
         if (count == 1)
@@ -49,8 +49,8 @@ namespace IRC {
                     cl += (*lst).getNick() + " ";
                 }
             }
-            sendReply(client, server, RPL_NAMREPLY, "No channels", cl);
-            sendReply(client, server, RPL_ENDOFNAMES, "No channels");
+            sendReply(client, server, RPL_NAMREPLY, "NoChannels", "-", cl);
+            sendReply(client, server, RPL_ENDOFNAMES, "NoChannels");
         }
     }
 

@@ -214,8 +214,10 @@ namespace IRC {
 
 			for (std::vector<std::string>::iterator it = msgs.begin(); it != msgs.end(); ++it) {
 				if (!it->empty()) {
-					if (!client->isPinged())
+					if (!client->isPinged()) {
+						client->unsetPinged();
 						client->touchPingpongTime();
+					}
 					std::cout << "[DEBUG]: cmd: " << *it << std::endl;
 					Command cmd(*it);
 					cmd.exec(*client, *this);
@@ -249,18 +251,18 @@ namespace IRC {
 		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
 			if (!it->isFlag(UMODE_REGISTERED)
-			&& it->getRegisterTime() + this->registration_timeout <= time(NULL)) {
+				&& it->getRegisterTime() + this->registration_timeout <= time(NULL)) {
 				// reply timeout
 				send_command(Command("", "ERROR", "Registration timeout"), *it);
 				it->disconnect();
 				continue;
 			} else if (it->isFlag(UMODE_REGISTERED)
-			&& !it->isPinged() && it->getPingpongTime() + this->ping_period <= time(NULL)) {
+					   && !it->isPinged() && it->getPingpongTime() + this->ping_period <= time(NULL)) {
 				send_command(*it, CMD_PING, it->getNick());
 				it->setPinged();
 				it->touchPingpongTime();
 			} else if (it->isFlag(UMODE_REGISTERED)
-			&& it->isPinged() && it->getPingpongTime() + this->pong_timeout <= time(NULL)) {
+					   && it->isPinged() && it->getPingpongTime() + this->pong_timeout <= time(NULL)) {
 				send_command(Command("", "ERROR", "Ping timeout"), *it);
 				it->disconnect();
 				continue;
@@ -275,10 +277,8 @@ namespace IRC {
 				quit_client(it->getFd());
 			}
 		}
-
-	ListenSocket::~ListenSocket() {
-//        delete base;
 	}
+	ListenSocket::~ListenSocket() {}
 
 	void ListenSocket::set_password(const std::string &password) {
 		this->password = password;

@@ -6,6 +6,7 @@
 #include <Reply.hpp>
 #include <algorithm>
 
+class ListenSocket;
 namespace IRC {
 
 	int check_num(const char *str) {
@@ -157,7 +158,7 @@ namespace IRC {
 			res.push_back('=');
 			res += std::to_string(channel->getLimit());
 		}
-		sendReply(server.getServername(), client, RPL_CHANNELMODEIS, chani, res);
+		sendReply(client, server,  RPL_CHANNELMODEIS, chani, res);
 	}
 
 	void mode_flags(Channel *channel, int flag, int const &sign)
@@ -256,13 +257,13 @@ namespace IRC {
 	//посмотреть сетку модов ника
 	{
 		std::string res = "r";
-		if (oclient->isFlag(UMODE_NOPER))
+		if (oclient->isFlag(UMODE_OPER))
 			res += " o";
 		if (oclient->isFlag(UMODE_INVIS))
 			res += " i";
 		if (oclient->isFlag(UMODE_WALLOPS))
 			res += " w";
-		sendReply(server.getServername(), client, RPL_UMODEIS, res);
+		sendReply(client, server,  RPL_UMODEIS, res);
 	}
 
 	void mode_flags_nick(Client *oclient, int flag, int const &sign)
@@ -283,8 +284,8 @@ namespace IRC {
 			return server.clients.end();
 		}
 		else if(flag == RPL_WHOISSERVER){
-			sendReply(server.getServername(), client, flag, nick, server.getServername(), "Вот такой вот сервер");
-			sendReply(server.getServername(), client, RPL_ENDOFWHOIS, nick);
+			sendReply(client, server,  flag, nick, server.getServername(), "Вот такой вот сервер");
+			sendReply(client, server,  RPL_ENDOFWHOIS, nick);
 			return server.clients.end();
 		}
 		else if (nick.find('@') != std::string::npos) {
@@ -296,7 +297,6 @@ namespace IRC {
 							  is_nickname(nick));
 		return it;
 	}
-}
 
 	bool check_channel_exist(Client const &client, ListenSocket const &server, channel_iter const& chan, std::string const& chan_name) {
 		if (!server.isChannelExist(chan)) {
@@ -314,5 +314,4 @@ namespace IRC {
 		}
 		return true;
 	}
-
-}// namespace IRC
+} // namespace IRC

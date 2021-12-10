@@ -64,7 +64,7 @@ namespace IRC {
     void cmd_kill(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_admin(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_ping(Command const &cmd, Client &client, ListenSocket &server);
-    void cmd_pong(Command const &cmd, Client &client, ListenSocket &server);
+	void cmd_pong(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_whois(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_wallops(Command const &cmd, Client &client, ListenSocket &server);
     void cmd_whowas(Command const &cmd, Client &client, ListenSocket &server);

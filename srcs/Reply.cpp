@@ -54,7 +54,7 @@ namespace IRC {
 				cmd << arg1 << "Wildcard in toplevel domain";
 				break;
 			case ERR_UNKNOWNCOMMAND:
-				cmd << user.getNick() << arg1 << "Unknown command";
+				cmd << arg1 << "Unknown command";
 				break;
 			case ERR_NOMOTD:
 				cmd << "MOTD File is missing";

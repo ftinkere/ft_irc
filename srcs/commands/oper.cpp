@@ -6,7 +6,7 @@
 #include <Reply.hpp>
 #include <algorithm>
 #include <sstream>
-//TODO: all
+
 namespace IRC {
 
 	void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {
@@ -18,196 +18,66 @@ namespace IRC {
 			return;
 		}
 		if (params[0][0] == '#') {
-			Channel *channel = server.thisischannel(params[0], 0, client);
+			Channel *channel = check_channel(params[0], server, client, 0);
 			if (channel == NULL)
 				return;
-			if (params.size() == 1)//выводим инфу об активных модах
-			{
-				std::string res;
-				if (channel->isFlag(CMODE_INVITE)) {
-					res.push_back(' ');
-					res.push_back(INVIT);
-				}
-				if (channel->isFlag(CMODE_MODER)) {
-					res.push_back(' ');
-					res.push_back(MODES);
-				}
-				if (channel->isFlag(CMODE_SECRET)) {
-					res.push_back(' ');
-					res.push_back(SECRET);
-				}
-				if (channel->isFlag(CMODE_NOEXT)) {
-					res.push_back(' ');
-					res.push_back(SPEAK);
-				}
-				if (channel->isFlag(CMODE_TOPIC)) {
-					res.push_back(' ');
-					res.push_back(TOPIC);
-				}
-				if (!channel->getKey().empty()) {
-					res.push_back(' ');
-					res.push_back(KEY);
-					res.push_back('=');
-					res += channel->getKey();
-				}
-				if (channel->getLimit() > 0) {
-					res.push_back(' ');
-					res.push_back(LEN);
-					res.push_back('=');
-					std::stringstream ss;
-					ss << channel->getLimit();
-					res += ss.str();
-				}
-				sendReply(client, server, RPL_CHANNELMODEIS, params[0], res);
+			if (params.size() == 1) {
+				//выводим инфу об активных модах
+				mode_table(channel, client, server, params[0]);
 				return;
 			}
-			if (channel->opers.find(&client.getNick()) == channel->opers.end() && !client.isFlag(UMODE_OPER)) {
-				sendError(client, server, ERR_CHANOPRIVSNEEDED, params[0]);//если нет привелегий
-				return;
-			}
+			if (!priv_need_channel(channel, client, server, params[0])) {return;}
 
-			std::map<const char, enum Channel::model>::iterator it = Channel::modes.find(params[1][1]);
-			//TODO: Странный, сука баг, когда иногда mode not found
-//			std::cout << "DEBUG!!!!!! " << params[1][1] << " " << (it == Channel::modes.end()) << " " << "s" << std::endl;
-			if (params[1].size() != 2 || it == Channel::modes.end()) {
-				sendError(client, server, ERR_UNKNOWNMODE, params.size() > 1 ? params[1] : "", params[0]);//если не подходит мод
+			std::map<const char, enum Channel::model>::iterator mod;
+			mod = Channel::modes.find(params[1][1]);//ищем мод в мапе
+			if (params[1].size() != 2 || mod == channel->modes.end()) {
+				sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
 				return;
 			}
-			enum Channel::model mod = it->second;
+			size_t res = mod->second;
 			char sign = params[1][0];
 			if (sign != '-' && sign != '+') {
 				sendError(client, server, ERR_UNKNOWNMODE, params[1], params[0]);//если не подходит мод
 				return;
 			}
-			switch (mod) {
+			switch (res) {
 				case Channel::I:
-					if (sign == '-') {
-						channel->zeroFlag(CMODE_INVITE);
-					} else {
-						channel->setFlag(CMODE_INVITE);
-					}
+					mode_flags(channel, CMODE_INVITE, sign);
 					break;
 				case Channel::M:
-					if (sign == '-') {
-						channel->zeroFlag(CMODE_MODER);
-					} else {
-						channel->setFlag(CMODE_MODER);
-					}
+					mode_flags(channel, CMODE_MODER, sign);
 					break;
 				case Channel::S:
-					if (sign == '-') {
-						channel->zeroFlag(CMODE_SECRET);
-					} else {
-						channel->setFlag(CMODE_SECRET);
-					}
+					mode_flags(channel, CMODE_SECRET, sign);
 					break;
 				case Channel::N:
-					if (sign == '-') {
-						channel->zeroFlag(CMODE_NOEXT);
-					} else {
-						channel->setFlag(CMODE_NOEXT);
-					}
+					mode_flags(channel, CMODE_NOEXT, sign);
 					break;
 				case Channel::T:
-					if (sign == '-') {
-						channel->zeroFlag(CMODE_TOPIC);
-					} else {
-						channel->setFlag(CMODE_TOPIC);
-					}
+					mode_flags(channel, CMODE_TOPIC, sign);
 					break;
 				case Channel::O: {
-					if (params.size() < 3) {
-						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
+					Client *moded = check_mode_nick(channel, client, server, params[2], params[0], params.size());
+					if (moded == NULL)
 						return;
-					}
-					std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-																  is_nickname(params[2]));
-					if (to == server.clients.end()) {
-						sendError(client, server, ERR_NOSUCHNICK, params[2]);
-						return;
-					}
-					std::string nick = to->getNick();
-					if (channel->users.find(&(*to)) == channel->users.end()) {
-						sendError(client, server, ERR_USERNOTINCHANNEL, params[2], params[0]);
-						return;
-					}
-					if (sign == '+') {
-						if (channel->opers.find(&nick) != channel->opers.end()) {
-							return;
-						} else {
-							channel->opers.insert(&(to->getNick()));
-						}
-					} else {
-						if (channel->opers.find(&nick) == channel->opers.end()
-							&& !client.isFlag(UMODE_OPER)) {
-							return;
-						} else {
-							channel->opers.erase(&(to->getNick()));
-						}
-					}
+					mode_flags_chan_nick(moded, channel->opers, sign);
 					break;
 				}
 				case Channel::V: {
-					if (params.size() < 3) {
-						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
+					Client *moded = check_mode_nick(channel, client, server, params[2], params[0], params.size());
+					if (moded == NULL)
 						return;
-					}
-					std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-																  is_nickname(params[2]));
-					if (to == server.clients.end()) {
-						sendError(client, server, ERR_NOSUCHNICK, params[2]);
-						return;
-					}
-					std::string nick = to->getNick();
-					if (channel->users.find(&(*to)) == channel->users.end()) {
-						sendError(client, server, ERR_USERNOTINCHANNEL, params[2], params[0]);
-						return;
-					}
-					if (sign == '+') {
-						if (channel->voiced.find(&nick) != channel->voiced.end()) {
-							return;
-						} else {
-							channel->voiced.insert(&((*to).getNick()));
-						}
-					} else {
-						if (channel->voiced.find(&nick) == channel->voiced.end()) {
-							return;
-						} else {
-							channel->voiced.erase(&(to->getNick()));
-						}
-					}
+					mode_flags_chan_nick(moded, channel->voiced, sign);
 					break;
 				}
 				case Channel::K: {
-					if (params.size() < 3) {
-						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
-						return;
-					}
-					if (sign == '+') {
-						if (!channel->getKey().empty()) {
-							sendError(client, server, ERR_KEYSET, params[0]);
-							return;
-						} else {
-							channel->setKey(params[2]);
-						}
-					} else {
-						channel->clearKey();
-					}
+					if (!mode_flags_keys(channel, client, server, sign, params.size(), params[2], params[0]))
+						return ;
 					break;
 				}
 				case Channel::L: {
-					if (params.size() < 3) {
-						sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
-						return;
-					}
-					if (sign == '+') {
-						int a = check_num(params[2].c_str());//переводим в число
-						if (a != false) {
-							channel->setLimit(a);
-						}
-					} else {
-						channel->clearLimit();
-					}
+					if (!mode_flags_limit(channel, client, server, sign, params.size(), params[2], params[0]))
+						return ;
 					break;
 				}
 			}
@@ -219,14 +89,7 @@ namespace IRC {
 			if (oclient == NULL)
 				return;
 			if (params.size() == 1) {
-				std::string res = "r";
-				if (oclient->isFlag(UMODE_OPER))
-					res += " o";
-				if (oclient->isFlag(UMODE_INVIS))
-					res += " i";
-				if (oclient->isFlag(UMODE_WALLOPS))
-					res += " w";
-				sendReply(client, server, RPL_UMODEIS, res);
+				mode_table_nicks(oclient, client, server);
 				return;
 			}
 			std::string models = "iwo";
@@ -241,54 +104,34 @@ namespace IRC {
 				return;
 			}
 			if (client.isFlag(UMODE_OPER)) {
-				if (mod == 'i') {
-					if (sign == '+')
-						oclient->setFlag(UMODE_INVIS);
-					else
-						oclient->zeroFlag(UMODE_INVIS);
-				} else if (mod == 'w') {
-					if (sign == '+')
-						oclient->setFlag(UMODE_WALLOPS);
-					else
-						oclient->zeroFlag(UMODE_WALLOPS);
-				} else if (mod == 'o') {
-					if (sign == '+')
-						oclient->setFlag(UMODE_OPER);
-					else
+				if (mod == 'i')
+					mode_flags_nick(oclient, UMODE_INVIS, sign);
+				else if (mod == 'w')
+					mode_flags_nick(oclient, UMODE_WALLOPS, sign);
+				else if (mod == 'o')
+					mode_flags_nick(oclient, UMODE_OPER, sign);
+			} else if (params[0] == oclient->getNick()) {
+				if (mod == 'i')
+					mode_flags_nick(oclient, UMODE_INVIS, sign);
+				else if (mod == 'w')
+					mode_flags_nick(oclient, UMODE_WALLOPS, sign);
+				else if (mod == 'o'){
+					if (sign == '+') {
+						sendError(client, server, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
+						return;
+					} else
 						oclient->zeroFlag(UMODE_OPER);
 				}
 			} else {
-				if (client.getNick() != oclient->getNick() && !client.isFlag(UMODE_OPER)) {
-					sendError(client, server, ERR_USERSDONTMATCH);
-					return;
-				} else if (mod == 'i') {
-					if (sign == '+')
-						oclient->setFlag(UMODE_INVIS);
-					else
-						oclient->zeroFlag(UMODE_INVIS);
-				} else if (mod == 'w') {
-					if (sign == '+')
-						oclient->setFlag(UMODE_WALLOPS);
-					else
-						oclient->zeroFlag(UMODE_WALLOPS);
-				} else if (mod == 'o') {
-					if (!client.isFlag(UMODE_OPER))
-						sendError(client, server, ERR_NOPRIVILEGES);
-					if (sign == '+')
-						oclient->setFlag(UMODE_WALLOPS);
-					else
-						oclient->zeroFlag(UMODE_WALLOPS);
-				}
+				sendError(client, server, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
+				return;
 			}
 		}
 	}
 
-	void cmd_oper(Command const &cmd, Client &client, ListenSocket &server) {
-		std::vector<std::string> const &params = cmd.getParams();//параметры
-		std::map<std::string, std::string>::iterator pass;
-		//        std::vector<std::string> keys;
-		int res;
-		int count = 0;
+    void cmd_oper(Command const &cmd, Client &client, ListenSocket &server) {
+        std::vector<std::string> const &params = cmd.getParams(); //параметры
+        std::map<std::string, std::string>::iterator pass;
 
 		if (params.empty() || params.size() != 2) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "OPER");
@@ -312,8 +155,6 @@ namespace IRC {
 		//TODO: что то сделать с комментом надо
 		std::vector<std::string> const &params = cmd.getParams();//параметры
 		std::vector<std::string> pass;
-		int res;
-		int count = 0;
 
 		if (params.empty() || params.size() != 2) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "KILL");
@@ -324,17 +165,11 @@ namespace IRC {
 			sendError(client, server, ERR_NOPRIVILEGES);
 			return;
 		}
-		std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-													  is_nickname(params[0]));
-		if (to == server.clients.end()) {
+		std::list<Client>::iterator to = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
+		if (it == server.clients.end()) {
 			sendError(client, server, ERR_NOSUCHNICK, params[0]);
 			return;
 		}
-		if (params[0] == server.getServername()) {
-			sendError(client, server, ERR_CANTKILLSERVER);
-			return;
-		}
-//		server.quit_client(to->getFd());
 		to->disconnect();
 	}
 }// namespace IRC

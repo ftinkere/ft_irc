@@ -22,6 +22,8 @@ namespace IRC {
 
 		std::vector<int> clients;
 
+		// if server зачем-то return
+
 		std::string chan_s = params[0].substr(params[0][0] == '@' ? 1 : 0);
 		channel_iter it = server.getChannel(chan_s);
 		if (params[0][0] == '#' || (params[0].size() > 1 && params[0][0] == '@' && params[0][1] == '#')) {
@@ -79,6 +81,8 @@ namespace IRC {
 			return;
 		}
 		std::vector<int> clients;
+
+		// if server зачем-то return
 
 		if (params[0][0] == '#') {
 			std::map<std::string, Channel>::iterator it = server.channels.find(params[0]);

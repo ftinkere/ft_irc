@@ -34,6 +34,16 @@ namespace IRC {
 	bool check_join_chan(Client const& client, ListenSocket const& server, Channel const& chan, std::string const& in_key);
 	bool check_channel_exist(Client const &client, ListenSocket const &server, channel_iter const& chan, std::string const& chan_name);
 	bool check_channel_send(Client const &client, ListenSocket const &server, Channel const& chan);
+	void mode_table(Channel *channel, Client const &client, ListenSocket &server, std::string const &chani);
+	void mode_flags(Channel *channel, int flag, int const &sign);
+	Client* check_mode_nick(Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, std::string const &chan, size_t const &len);
+	void mode_flags_chan_nick(Client *moded, std::set<std::string const*> &members, int const &sign);
+	bool mode_flags_keys(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan);
+	bool mode_flags_limit(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan);
+	void mode_table_nicks(Client *oclient, Client const &client, ListenSocket &server);
+	void mode_flags_nick(Client *oclient, int flag, int const &sign);
+	std::list<Client>::iterator check_mask_nick(int flag, std::string const &nick, Client &client, ListenSocket &server);
+
 
 	void cmd_pass(Command const &cmd, Client &client, ListenSocket &server);
 	void cmd_nick(Command const &cmd, Client &client, ListenSocket &server);

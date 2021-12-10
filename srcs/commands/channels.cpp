@@ -32,6 +32,20 @@ namespace IRC {
 			}
 
 			Channel &chan = server.getChannel(chans[i])->second;
+			std::string const &key = chan.getKey();
+
+			if (!key.empty() && keys[i] != key) {
+				sendError(client, server, ERR_BADCHANNELKEY, chans[i]);
+				continue;
+			}
+			if (chan.isFlag(CMODE_INVITE)) {
+				sendError(client, server, ERR_INVITEONLYCHAN, chans[i]);
+				continue;
+			}
+			if (!chan.check_limit()) {
+				sendError(client, server, ERR_CHANNELISFULL, chans[i]);
+				continue;
+			}
 
 			Command join(client.get_full_name(), CMD_JOIN, chans[i]);
 			server.send_command(join, client);

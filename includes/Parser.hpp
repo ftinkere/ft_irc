@@ -14,7 +14,7 @@ namespace IRC {
 #define CMD_OPER "OPER"
 #define CMD_QUIT "QUIT"
 
-#define CMD_JOIN "JOIN" //доделать
+#define CMD_JOIN "JOIN"
 #define CMD_PART "PART"
 #define CMD_MODE "MODE"
 #define CMD_TOPIC "TOPIC"
@@ -28,16 +28,16 @@ namespace IRC {
 #define CMD_WALLOPS "WALLOPS"
 #define CMD_AWAY "AWAY"
 
-#define CMD_WHOIS "WHOIS"
-#define CMD_WHOWAS "WHOWAS"
+#define CMD_WHOIS "WHOIS" //доделать
+#define CMD_WHOWAS "WHOWAS" //доделать
 
 #define CMD_KILL "KILL"
 #define CMD_PING "PING"
 #define CMD_PONG "PONG"
+#define CMD_ADMIN "ADMIN"
 
 //#define CMD_VERSION "VERSION"
 //#define CMD_TIME "TIME"
-#define CMD_ADMIN "ADMIN"
 //#define CMD_INFO "INFO"
 //#define CMD_REHASH "REHASH"
 //#define CMD_RESTART "RESTART"

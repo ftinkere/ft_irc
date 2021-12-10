@@ -276,33 +276,6 @@ namespace IRC {
 			}
 		}
 
-//        int listener = Socket::getListener();
-		// проходим через существующие соединения, ищем данные для чтения
-//        for(int i = 0; i <= fd_max; i++) {
-//            if (FD_ISSET(i, &read_fds))
-//            { // есть!
-//                if (listener == i)
-//                {// обрабатываем новые соединения
-//                    new_client();
-//                }
-//                else
-//                {// обрабатываем данные клиента
-//                   handle_chat(i);
-//                } // Закончили обрабатывать данные от клиента
-//            } // Закончили обрабатывать новое входящее соединение
-//        } // Закончили цикл по дескрипторам
-	}
-
-	// ListenSocket::SUBD::SUBD()
-	// {
-	//     cl = new client();
-	// }
-
-	// ListenSocket::SUBD::~SUBD()
-	// {
-	//     delete cl;
-	// }
-
 	ListenSocket::~ListenSocket() {
 //        delete base;
 	}
@@ -392,8 +365,19 @@ namespace IRC {
 			}
 		} else {
 			// find nick
-			std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(),
-														  is_nickname(nick));
+            std::list<Client>::iterator it;
+            if (nick == servername) {//если пишешь серверу
+                ret.push_back(NULL);
+                return ret;
+            }
+            //проверить маску
+            else if (nick.find('@') != std::string::npos) {
+                it = std::find_if(this->clients.begin(), this->clients.end(),
+                                  is_mask(nick));
+            }
+            else
+			    it = std::find_if(this->clients.begin(), this->clients.end(),
+                                  is_nickname(nick));
 			if (it == this->clients.end()) {
 				if (flag != -1) {
 					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");

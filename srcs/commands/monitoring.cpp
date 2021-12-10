@@ -6,7 +6,7 @@
 #include <Reply.hpp>
 #include <algorithm>
 #include <sstream>
-//TODO: whois whowas
+
 namespace IRC {
 
     void cmd_names(Command const &cmd, Client &client, ListenSocket &server) {
@@ -70,9 +70,8 @@ namespace IRC {
     }
 
     void cmd_whois(Command const &cmd, Client &client, ListenSocket &server) {
-        //TODO: поправить реалнейм
         std::vector<std::string> const &params = cmd.getParams(); //параметры
-
+        std::list<Client>::iterator to;
         if (params.empty()){
             sendError(client, server, ERR_NONICKNAMEGIVEN);
             return;
@@ -81,8 +80,7 @@ namespace IRC {
         for (int i = 0; i < nicks.size(); ++i)
         {
             std::string nick = nicks[i];
-            std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-                                                          is_nickname(nick));
+            to = check_mask_nick(RPL_WHOISSERVER, params[0], client, server);
             if (to == server.clients.end()) {
                 sendError(client, server, ERR_NOSUCHNICK, nick);
                 continue;
@@ -101,8 +99,9 @@ namespace IRC {
                 else
                     chans_str += *chans + ' ';
             }
-            sendReply(client, server, RPL_WHOISUSER, nick, find_client.getUser(), find_client.getHost(), "realname");
+            sendReply(client, server, RPL_WHOISUSER, nick, find_client.getUser(), find_client.getHost(), find_client.getReal());
             sendReply(client, server, RPL_WHOISCHANNELS, nick, chans_str);
+			sendReply(client, server, RPL_WHOISSERVER, nick, server.getServername(), "Вот такой вот сервер");
             if (!find_client.getAway().empty())
                 sendReply(client, server, RPL_AWAY, nick, find_client.getAway());
             if (find_client.isFlag(UMODE_OPER))
@@ -116,8 +115,6 @@ namespace IRC {
     }
 
     void cmd_whowas(Command const &cmd, Client &client, ListenSocket &server) {
-        //TODO: поправить реалнейм
-        //TODO: сделать проверку на имя сервера
         std::vector<std::string> const &params = cmd.getParams(); //параметры
 
         if (params.empty()){
@@ -139,8 +136,9 @@ namespace IRC {
                 int j = 0;
                 for (std::multimap<std::string, Client>::iterator it = range.first; it != range.second && j < limit; ++it, ++j)
                 {
-                    sendReply(client, server, RPL_WHOWASUSER, nick, it->second.getUser(), it->second.getHost(), "realname");
-                    loop = true;//если зашли в цикл значит такой ник есть
+                    sendReply(client, server, RPL_WHOWASUSER, nick, it->second.getUser(), it->second.getHost(), it->second.getReal());
+					sendReply(client, server, RPL_WHOISSERVER, nick, server.getServername(), "Вот такой вот сервер");
+					loop = true;//если зашли в цикл значит такой ник есть
                 }
                 if (!loop)
                     sendError(client, server, ERR_WASNOSUCHNICK, nick);

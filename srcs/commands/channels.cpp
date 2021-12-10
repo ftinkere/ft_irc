@@ -49,7 +49,7 @@ namespace IRC {
 
 			Command join(client.get_full_name(), CMD_JOIN, chans[i]);
 			server.send_command(join, client);
-			for (std::set<const std::string*>::iterator it = chan.opers.begin(); it != chan.opers.end(); ++it) {
+			for (channel_ov_iter it = chan.opers.begin(); it != chan.opers.end(); ++it) {
 				server.send_command(join, **it);
 			}
 

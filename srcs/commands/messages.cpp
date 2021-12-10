@@ -45,7 +45,7 @@ namespace IRC {
 		} else if (params[0].size() > 1 && params[0][0] == '@' && params[0][1] == '#') {
 			std::string chan_s = params[0].substr(1);
 			Channel &chan = it->second;
-			for (std::set<std::string const *>::iterator op_it = it->second.opers.begin(); op_it != it->second.opers.end(); ++op_it) {
+			for (channel_ov_iter op_it = it->second.opers.begin(); op_it != it->second.opers.end(); ++op_it) {
 				client_iter cl_it = server.getClient(**op_it);
 				if (cl_it->getFd() != client.getFd()) {
 					clients.push_back(cl_it->getFd());
@@ -85,24 +85,25 @@ namespace IRC {
 		// if server зачем-то return
 
 		if (params[0][0] == '#') {
-			std::map<std::string, Channel>::iterator it = server.channels.find(params[0]);
+			channel_iter it = server.channels.find(params[0]);
 			if (it == server.channels.end()
 				|| (it->second.isFlag(CMODE_NOEXT) && it->second.users.find(&client) == it->second.users.end())
 				|| (it->second.isFlag(CMODE_MODER) && it->second.voiced.find(&client.getNick()) == it->second.voiced.end())) { return; }
-			for (std::set<Client *>::iterator cit = it->second.users.begin(); cit != it->second.users.end(); ++cit) {
+			for (channel_client_iter cit = it->second.users.begin(); cit != it->second.users.end(); ++cit) {
 				clients.push_back((*cit)->getFd());
 			}
 		} else if (params[0].size() > 1 && params[0][0] == '@' && params[0][1] == '#') {
-			std::map<std::string, Channel>::iterator it = server.channels.find(params[0]);
+			channel_iter it = server.channels.find(params[0]);
 			if (it == server.channels.end()
 				|| (it->second.isFlag(CMODE_NOEXT) && it->second.users.find(&client) == it->second.users.end())
 				|| (it->second.isFlag(CMODE_MODER) && it->second.voiced.find(&client.getNick()) == it->second.voiced.end())) { return; }
-			for (std::set<std::string const *>::iterator cit = it->second.opers.begin(); cit != it->second.opers.end(); ++cit) {
+			for (channel_ov_iter cit = it->second.opers.begin(); cit != it->second.opers.end(); ++cit) {
 				client_iter cl_it = server.getClient(**cit);
 				clients.push_back((*cl_it).getFd());
 			}
 		} else {
-			std::list<Client>::iterator it_client = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(params[0]));
+			client_iter  it_client = server.getClient(params[0]);
+//			std::list<Client>::iterator it_client = std::find_if(server.clients.begin(), server.clients.end(), is_nickname(params[0]));
 			if (it_client == server.clients.end()) { return; }
 			clients.push_back((*it_client).getFd());
 		}
@@ -143,7 +144,7 @@ namespace IRC {
 
 		//ищем все ники
 		msg = choose_str(params, len, 0);
-		std::list<Client>::iterator to = server.clients.begin();
+		client_iter to = server.clients.begin();
 		for (; to != server.clients.end(); ++to) {//отправляем
 			Command cmd(client.get_full_name(), CMD_WALLOPS);
 			if (to->isFlag(UMODE_WALLOPS)) {

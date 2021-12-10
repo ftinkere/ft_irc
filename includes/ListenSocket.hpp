@@ -72,6 +72,8 @@ namespace IRC {
 		client_iter getClient(int fd);
 		client_const_iter getClient(std::string const &nick) const;
 		client_const_iter getClient(int fd) const;
+		client_iter getClientByMask(const std::string &mask);
+		client_const_iter getClientByMask(const std::string &mask) const;
 
 		bool isClientExist(std::string const &nick) const;
 		bool isClientExist(client_iter const &it) const;
@@ -91,6 +93,7 @@ namespace IRC {
 		void send_command(int fd, std::string const &cmd,
 						  std::string const &arg1 = "", std::string const &arg2 = "",
 						  std::string const &arg3 = "", std::string const &arg4 = "") const;
+
 	};
 }// namespace IRC
 #endif

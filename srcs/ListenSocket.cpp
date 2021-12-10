@@ -149,7 +149,7 @@ namespace IRC {
 			if (res == 0) {
 				this->clients.back().setHost(node);
 			} else {
-			    this->clients.back().setHost(ipv4);
+				this->clients.back().setHost(ipv4);
 			}
 			this->clients.back().touchRegisterTime();
 			this->clients.back().touchPingpongTime();
@@ -164,9 +164,10 @@ namespace IRC {
 		char buffer[BUFFER_SIZE] = {0};
 		ssize_t bytesRead;
 
-		std::list<Client>::iterator client = std::find_if(clients.begin(), clients.end(), is_fd(fd));
+		client_iter client = getClient(fd);
 
-		if ((bytesRead = recv(fd, buffer, BUFFER_SIZE - 1, MSG_PEEK)) <= 0) { // получена ошибка или соединение закрыто клиентом
+		if ((bytesRead = recv(fd, buffer, BUFFER_SIZE - 1, MSG_PEEK)) <=
+			0) { // получена ошибка или соединение закрыто клиентом
 			if (bytesRead == 0) {
 				// соединение закрыто
 				std::cout << "fd " << fd << " hung up" << std::endl;
@@ -230,7 +231,7 @@ namespace IRC {
 		if (client->getNick().empty()) {
 			client->setNick(buf);
 		} else {
-			std::list<Client>::iterator to = std::find_if(clients.begin(), clients.end(), is_nickname(buf));
+			client_iter to = std::find_if(clients.begin(), clients.end(), is_nickname(buf));
 			if (to != clients.end()) {
 				if (send(to->getFd(), "ping\n", 5, 0) < 0) {
 					std::cerr << "Error send_to" << std::endl;
@@ -248,7 +249,7 @@ namespace IRC {
 			new_client();
 		}
 
-		for (std::list<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+		for (client_iter it = clients.begin(); it != clients.end(); ++it) {
 			// Таймаутит незарегестрированных пользователей
 			if (!it->isFlag(UMODE_REGISTERED)
 				&& it->getRegisterTime() + this->registration_timeout <= time(NULL)) {
@@ -278,6 +279,7 @@ namespace IRC {
 			}
 		}
 	}
+
 	ListenSocket::~ListenSocket() {}
 
 	void ListenSocket::set_password(const std::string &password) {
@@ -285,12 +287,12 @@ namespace IRC {
 	}
 
 	void ListenSocket::quit_client(int fd) {
-		std::list<Client>::iterator cl = std::find_if(clients.begin(), clients.end(), is_fd(fd));
+		client_iter cl = getClient(fd);
 		for (std::list<std::string>::iterator it = cl->getChannels().begin();
 			 it != cl->getChannels().end(); ++it) {
 			channels[*it].erase_client(*cl); //удаляем из всех групп
 			Command quit(cl->get_full_name(), CMD_QUIT, cl->getNick());
-			for (std::set<Client *>::iterator itc = channels[*it].users.begin();
+			for (channel_client_iter itc = channels[*it].users.begin();
 				 itc != channels[*it].users.end(); ++itc) {
 				this->send_command(quit, (*itc)->getFd());
 			}
@@ -322,7 +324,7 @@ namespace IRC {
 				if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&const_cast<Client &>(feedback)) !=
 												chan.users.end()) { //если есть +n или клиент состоит в группе
 					if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
-						for (std::set<Client *>::iterator it = chan.users.begin(); it != chan.users.end(); ++it) {
+						for (channel_client_iter it = chan.users.begin(); it != chan.users.end(); ++it) {
 //							Client *client = *it;
 							ret.push_back(*it);
 						}
@@ -345,11 +347,9 @@ namespace IRC {
 					//если есть +n или клиент состоит в группе
 				{
 					if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
-						std::set<std::string const *>::iterator it = chan.opers.begin();//берем всех оперов
+						channel_ov_iter it = chan.opers.begin();//берем всех оперов
 						for (; it != chan.opers.end(); ++it) {
-							std::list<Client>::iterator to = std::find_if(clients.begin(),
-																		  clients.end(),
-																		  is_nickname(**it));
+							client_iter to = getClient(**it);
 							ret.push_back(&(*to));
 						}
 					} else {
@@ -365,19 +365,16 @@ namespace IRC {
 			}
 		} else {
 			// find nick
-            std::list<Client>::iterator it;
-            if (nick == servername) {//если пишешь серверу
-                ret.push_back(NULL);
-                return ret;
-            }
-            //проверить маску
-            else if (nick.find('@') != std::string::npos) {
-                it = std::find_if(this->clients.begin(), this->clients.end(),
-                                  is_mask(nick));
-            }
-            else
-			    it = std::find_if(this->clients.begin(), this->clients.end(),
-                                  is_nickname(nick));
+			client_iter it;
+			if (nick == servername) {//если пишешь серверу
+				ret.push_back(NULL);
+				return ret;
+			}
+				//проверить маску
+			else if (nick.find('@') != std::string::npos) {
+				it = getClientByMask(nick);
+			} else
+				it = getClient(nick);
 			if (it == this->clients.end()) {
 				if (flag != -1) {
 					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
@@ -399,21 +396,17 @@ namespace IRC {
 	Client *IRC::ListenSocket::thisisnick(const std::string &nick, int flag, Client &feedback) {
 		if (feedback.getNick() == nick)
 			return &feedback;
-		std::list<Client>::iterator it = std::find_if(this->clients.begin(), this->clients.end(),
-													  is_nickname(nick));
+		client_iter it = getClient(nick);
 		if (it == this->clients.end()) {
 			sendError(feedback, *this, ERR_NOSUCHNICK, nick);
 			return NULL;
 		}
 		if (feedback.isFlag(UMODE_OPER)) {
 			return &(*it);
-		}
-		else if (flag == 1 && !(*it).isFlag(UMODE_INVIS))
-		{
-		    return &(*it);
-		}
-		else {
-			if ((*it).isFlag(UMODE_INVIS)){
+		} else if (flag == 1 && !(*it).isFlag(UMODE_INVIS)) {
+			return &(*it);
+		} else {
+			if ((*it).isFlag(UMODE_INVIS)) {
 				sendError(feedback, *this, ERR_NOSUCHNICK, nick);
 				return NULL;
 			}
@@ -423,7 +416,7 @@ namespace IRC {
 	}
 
 	Channel *IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client &feedback) {
-		std::map<std::string, Channel>::iterator it = channels.find(nick);
+		channel_iter it = channels.find(nick);
 		if (it == channels.end()) {
 			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
 			return (NULL);
@@ -436,8 +429,7 @@ namespace IRC {
 	}
 
 	void ListenSocket::send_command(const Command &command, const std::string &nickname) const {
-		std::list<Client>::const_iterator to = std::find_if(getClients().begin(), getClients().end(),
-															is_nickname(nickname));
+		client_const_iter to = getClient(nickname);
 		if (to != getClients().end()) {
 			send_command(command, to->getFd());
 		}
@@ -462,7 +454,7 @@ namespace IRC {
 		return channels.find(chan) != channels.end();
 	}
 
-	bool ListenSocket::isChannelExist(channel_iter const& chan) const {
+	bool ListenSocket::isChannelExist(channel_iter const &chan) const {
 		return chan != channels.end();
 	}
 
@@ -476,7 +468,15 @@ namespace IRC {
 		return channels.find(chan);
 	}
 
-	client_iter ListenSocket::getClient(std::string const& nick) {
+	client_iter ListenSocket::getClientByMask(std::string const &mask) {
+		return std::find_if(clients.begin(), clients.end(), is_mask(mask));
+	}
+
+	client_const_iter ListenSocket::getClientByMask(std::string const &mask) const {
+		return std::find_if(clients.begin(), clients.end(), is_mask(mask));
+	}
+
+	client_iter ListenSocket::getClient(std::string const &nick) {
 		return std::find_if(clients.begin(), clients.end(), is_nickname(nick));
 	}
 
@@ -484,7 +484,7 @@ namespace IRC {
 		return std::find_if(clients.begin(), clients.end(), is_fd(fd));
 	}
 
-	client_const_iter ListenSocket::getClient(std::string const& nick) const {
+	client_const_iter ListenSocket::getClient(std::string const &nick) const {
 		return std::find_if(clients.begin(), clients.end(), is_nickname(nick));
 	}
 
@@ -495,6 +495,7 @@ namespace IRC {
 	bool ListenSocket::isClientExist(const std::string &nick) const {
 		return getClient(nick) != clients.end();
 	}
+
 	bool ListenSocket::isClientExist(const client_iter &it) const {
 		return it != clients.end();
 	}

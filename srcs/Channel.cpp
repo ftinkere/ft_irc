@@ -9,18 +9,17 @@ namespace IRC {
 			flags(CMODE_NOEXT | CMODE_TOPIC),
 			limit(0) {}
 
-    bool Channel::check_name(std::string const& name) {
-        if (name[0] != '#')
-            return false;
-        return true;
-    }
+	bool Channel::check_name(std::string const &name) {
+		if (name[0] != '#')
+			return false;
+		return true;
+	}
 
-    void Channel::add_memeber(Client & member)
-    {
+	void Channel::add_memeber(Client &member) {
 //        base[member] = 0;
 		if (users.empty()) {
 			opers.insert(&member.getNick());
-            voiced.insert(&member.getNick());
+			voiced.insert(&member.getNick());
 		}
 		users.insert(&member);
 	}
@@ -36,7 +35,7 @@ namespace IRC {
 	std::string Channel::get_names() const {
 		std::string ret;
 
-		for (std::set<std::string const*>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
+		for (std::set<std::string const *>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
 			ret += '@' + **it + ' ';
 		}
 		for (std::set<std::string const *>::const_iterator it = voiced.begin(); it != voiced.end(); ++it) {
@@ -72,12 +71,19 @@ namespace IRC {
 		users.erase(&cl);
 	}
 
-	bool Channel::isClient(Client const& client) const { return users.find(const_cast<Client*>(&client)) != users.end(); };
-	bool Channel::isClient(client_iter const& client) const { return users.find(&(*client)) != users.end(); };
-	bool Channel::isOper(Client const& client) const { return opers.find(&client.getNick()) != opers.end(); };
-	bool Channel::isOper(client_iter const& client) const { return opers.find(&client->getNick()) != opers.end(); };
-	bool Channel::isVoiced(Client const& client) const { return voiced.find(&client.getNick()) != voiced.end(); };
-	bool Channel::isVoiced(client_iter const& client) const { return voiced.find(&client->getNick()) != voiced.end(); };
+	bool Channel::isClient(Client const &client) const {
+		return users.find(const_cast<Client *>(&client)) != users.end();
+	};
+
+	bool Channel::isClient(client_iter const &client) const { return users.find(&(*client)) != users.end(); };
+
+	bool Channel::isOper(Client const &client) const { return opers.find(&client.getNick()) != opers.end(); };
+
+	bool Channel::isOper(client_iter const &client) const { return opers.find(&client->getNick()) != opers.end(); };
+
+	bool Channel::isVoiced(Client const &client) const { return voiced.find(&client.getNick()) != voiced.end(); };
+
+	bool Channel::isVoiced(client_iter const &client) const { return voiced.find(&client->getNick()) != voiced.end(); };
 
 	Channel::Channel() :
 			flags(CMODE_NOEXT | CMODE_TOPIC),

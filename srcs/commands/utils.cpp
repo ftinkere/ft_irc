@@ -180,8 +180,7 @@ namespace IRC {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
 			return NULL;
 		}
-		std::list<Client>::iterator to = std::find_if(server.clients.begin(), server.clients.end(),
-													  is_nickname(nick));
+		client_iter to = server.getClient(nick);
 		if (to == server.clients.end()) {
 			sendError(client, server, ERR_NOSUCHNICK, nick);
 			return NULL;
@@ -275,10 +274,10 @@ namespace IRC {
 			oclient->zeroFlag(flag);
 	}
 
-	std::list<Client>::iterator check_mask_nick(int flag, std::string const &nick, Client &client, ListenSocket &server)
+	client_iter check_mask_nick(int flag, std::string const &nick, Client &client, ListenSocket &server)
 	//ищем маску или ник
 	{
-		std::list<Client>::iterator it;
+		client_iter it;
 		if (flag == ERR_CANTKILLSERVER) {
 			sendError(client, server, flag);
 			return server.clients.end();
@@ -289,12 +288,10 @@ namespace IRC {
 			return server.clients.end();
 		}
 		else if (nick.find('@') != std::string::npos) {
-			it = std::find_if(server.clients.begin(), server.clients.end(),
-							  is_mask(nick));
+			it = server.getClientByMask(nick);
 		}
 		else
-			it = std::find_if(server.clients.begin(), server.clients.end(),
-							  is_nickname(nick));
+			it = server.getClient(nick);
 		return it;
 	}
 

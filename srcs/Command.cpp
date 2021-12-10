@@ -162,35 +162,3 @@ IRC::Command::Command(std::string const& message): valid(true) {
 	}
 
 }
-
-//void IRC::Command::send_to(IRC::Client const& client, IRC::ListenSocket const& server) const {
-//	std::string message;
-//
-//	if (!this->prefix.empty()) {
-//		message += ":" + server.getServername();
-//	} else {
-//		message += ":" + this->prefix;
-//	}
-//
-//	message += " " + command;
-//	for (int i = 0; i < params.size(); ++i) {
-//		if (i == params.size() - 1) {
-//			message += " :" + params[i] + "\r\n";
-//		} else {
-//			message += " " + params[i];
-//		}
-//	}
-//	if (params.empty()) {
-//		message += "\r\n";
-//	}
-//	send(client.getFd(), message.c_str(), message.size(), 0);
-//}
-//
-//void IRC::Command::send_to(const std::string &nick, IRC::ListenSocket const& server) const {
-//	std::vector<const Client>::iterator to = std::find_if(server.getClients().begin(), server.getClients().end(), is_nickname(nick));
-//	if (to == server.getClients().end()) {
-//		// reply nick not found
-//	} else {
-//		send_to(*to, server);
-//	}
-//}

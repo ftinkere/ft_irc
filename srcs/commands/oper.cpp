@@ -165,7 +165,7 @@ namespace IRC {
 			sendError(client, server, ERR_NOPRIVILEGES);
 			return;
 		}
-		std::list<Client>::iterator it = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
+		client_iter it = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
 		if (it == server.clients.end()) {
 			sendError(client, server, ERR_NOSUCHNICK, params[0]);
 			return;

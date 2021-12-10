@@ -24,6 +24,7 @@ namespace IRC {
 	typedef std::multimap<std::string, Client>::iterator base_client_iter;
 	typedef std::map<std::string, cmd>::const_iterator cmd_const_iter;
 	typedef std::set<Client *>::iterator channel_client_iter;
+	typedef std::set<const std::string*>::iterator channel_ov_iter;
 
 }
 #endif//FT_IRC_TYPES_HPP

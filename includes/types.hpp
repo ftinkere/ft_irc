@@ -19,6 +19,7 @@ namespace IRC {
 	typedef std::list<Client>::iterator client_iter;
 	typedef std::list<Client>::const_iterator client_const_iter;
 	typedef std::map<std::string, Channel>::iterator channel_iter;
+	typedef std::map<std::string, Channel>::const_iterator channel_const_iter;
 	typedef std::map<std::string, std::string>::iterator oper_iter;
 	typedef std::map<std::string, std::string>::iterator admin_iter;
 	typedef std::multimap<std::string, Client>::iterator base_client_iter;

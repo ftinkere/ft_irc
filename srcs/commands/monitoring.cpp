@@ -11,36 +11,39 @@ namespace IRC {
 
 	void cmd_names(Command const &cmd, Client &client, ListenSocket &server) {
 		std::vector<std::string> const &params = cmd.getParams(); //параметры
-		std::vector<std::string> chans;
-		int count = 0;
-		channel_iter it;
-		std::vector<channel_iter> mas_it;
-		std::vector<channel_iter>::iterator vec_it;
-		size_t len = 0;
+		bool is_empty = false;
 
+		std::vector<channel_iter> mas_it;
 		if (!params.empty()) {
-			chans = split(params[0], ',');
-			len = chans.size();
-			for (int i = 0; i < len; ++i) { // TODO: ХУЙНЯ
-				it = server.channels.find(chans[i]);
-				if (it == server.channels.end())
+			std::vector<std::string> chans = split(params[0], ',');
+			size_t len = chans.size();
+			for (int i = 0; i < len; ++i) {
+				channel_iter it = server.getChannel(chans[i]);
+				if (!server.isChannelExist(it)) {
+					sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
 					continue;
+				}
 				mas_it.push_back(it);
 			}
-		} else {//если нет каналов выводим все
-			for (it = server.channels.begin(); it != server.channels.end(); ++it)
+		} else {
+			//если нет каналов выводим все
+			for (channel_iter it = server.channels.begin(); it != server.channels.end(); ++it) {
 				mas_it.push_back(it);
-			count = 1;
+			}
+			is_empty = true;
 		}
-		for (vec_it = mas_it.begin(); vec_it != mas_it.end(); ++vec_it) {
+		for (std::vector<channel_iter>::iterator vec_it = mas_it.begin(); vec_it != mas_it.end(); ++vec_it) {
 			Channel &channel = (*vec_it)->second;
-			if (channel.isFlag(CMODE_SECRET) && channel.users.find(&client) == channel.users.end())
+			if (channel.isFlag(CMODE_SECRET) && !channel.isClient(client)) {
+				sendReply(client, server, RPL_ENDOFNAMES, channel.getName());
 				continue;
+			}
 			sendReply(client, server, RPL_NAMREPLY, (*vec_it)->first,
 					  (*vec_it)->second.isFlag(CMODE_SECRET) ? "@" : "=", channel.get_names());
 			sendReply(client, server, RPL_ENDOFNAMES, (*vec_it)->first);
 		}
-		if (count == 1) {// если мы не выводили избранные каналы
+		if (is_empty) {
+			// если мы не выводили избранные каналы
 			std::string cl;
 			client_iter lst = server.clients.begin();
 			for (; lst != server.clients.end(); ++lst) {
@@ -48,8 +51,11 @@ namespace IRC {
 					cl += (*lst).getNick() + " ";
 				}
 			}
-			sendReply(client, server, RPL_NAMREPLY, "NoChannels", "-", cl);
-			sendReply(client, server, RPL_ENDOFNAMES, "NoChannels");
+			if (!cl.empty()) {
+				cl.erase(cl.end() - 1);
+			}
+			sendReply(client, server, RPL_NAMREPLY, "-", "-", cl);
+			sendReply(client, server, RPL_ENDOFNAMES, "-");
 		}
 	}
 

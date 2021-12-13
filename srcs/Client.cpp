@@ -69,7 +69,7 @@ bool IRC::Client::_name_control(std::string const& prefix, int v)
         }
     }
     else{
-        std::string spec = "-[]\\^{}";
+        std::string spec = "-_[]\\^{}";
         while(prefix.length() > i)
         {
             if (!std::isalnum(prefix[i]))

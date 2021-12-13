@@ -103,6 +103,9 @@ namespace IRC {
 	bool check_join_chan(Client const &client, ListenSocket const &server, Channel const &chan, std::string const &in_key) {
 		std::string const &key = chan.getKey();
 
+		if (chan.isClient(client)) {
+			return false;
+		}
 		if (!key.empty() && in_key != key) {
 			sendError(client, server, ERR_BADCHANNELKEY, chan.getName());
 			return false;
@@ -311,4 +314,21 @@ namespace IRC {
 		}
 		return true;
 	}
+
+	void send_command_to_sharing_channel(Command const& cmd, Client const &client, ListenSocket const& server) {
+		std::set<Client*> to_send;
+		for (std::list<std::string>::const_iterator cl_chan = client.getChannels().begin(); cl_chan != client.getChannels().end(); ++cl_chan) {
+			channel_const_iter chan = server.getChannel(*cl_chan);
+			if (server.isChannelExist(chan)) {
+				to_send.insert(chan->second.users.begin(), chan->second.users.end());
+			}
+		}
+		for (channel_client_iter it = to_send.begin(); it != to_send.end(); ++it) {
+			server.send_command(cmd, **it);
+		}
+		if (to_send.empty()) {
+			server.send_command(cmd, client);
+		}
+	}
+
 } // namespace IRC

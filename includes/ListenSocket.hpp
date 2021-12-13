@@ -65,6 +65,7 @@ namespace IRC {
 
 		bool isChannelExist(std::string const &chan) const;
 		bool isChannelExist(channel_iter const &chan) const;
+		bool isChannelExist(channel_const_iter const &chan) const;
 		void addNewChannel(std::string const &chan);
 		channel_iter getChannel(std::string const &chan);
 
@@ -94,6 +95,7 @@ namespace IRC {
 						  std::string const &arg1 = "", std::string const &arg2 = "",
 						  std::string const &arg3 = "", std::string const &arg4 = "") const;
 
+		channel_const_iter getChannel(const std::string &chan) const;
 	};
 }// namespace IRC
 #endif

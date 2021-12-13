@@ -242,20 +242,24 @@ namespace IRC {
 	}
 
 	void ListenSocket::check_connections() {
-//		socklen_t addrlen;addrlen
-//		struct sockaddr_storage remoteaddr;
+		std::vector<int> to_del;
 
-		if (FD_ISSET(listener, &read_fds)) {// обрабатываем новые соединения
+		if (FD_ISSET(listener, &read_fds)) {
+			// обрабатываем новые соединения
 			new_client();
 		}
 
 		for (client_iter it = clients.begin(); it != clients.end(); ++it) {
-			// Таймаутит незарегестрированных пользователей
-			if (!it->isFlag(UMODE_REGISTERED)
+			if (it->isDisconect()) {
+				to_del.push_back(it->getFd());
+				continue;
+			} else if (!it->isFlag(UMODE_REGISTERED)
 				&& it->getRegisterTime() + this->registration_timeout <= time(NULL)) {
-				// reply timeout
-				send_command(Command("", "ERROR", "Registration timeout"), *it);
-				it->disconnect();
+				// Таймаутит незарегестрированных пользователей
+//				send_command(Command("", "ERROR", "Registration timeout"), *it);
+				std::stringstream ss;
+				ss << this->registration_timeout;
+				it->disconnect("Registration timeout: " + ss.str() + " seconds");
 				continue;
 			} else if (it->isFlag(UMODE_REGISTERED)
 					   && !it->isPinged() && it->getPingpongTime() + this->ping_period <= time(NULL)) {
@@ -265,7 +269,9 @@ namespace IRC {
 			} else if (it->isFlag(UMODE_REGISTERED)
 					   && it->isPinged() && it->getPingpongTime() + this->pong_timeout <= time(NULL)) {
 				send_command(Command("", "ERROR", "Ping timeout"), *it);
-				it->disconnect();
+				std::stringstream ss;
+				ss << this->pong_timeout;
+				it->disconnect("Pong timeout: " + ss.str() + " seconds");
 				continue;
 			}
 			if (FD_ISSET(it->getFd(), &read_fds)) {
@@ -273,11 +279,23 @@ namespace IRC {
 			}
 		}
 
-		for (std::list<Client>::reverse_iterator it = clients.rbegin(); it != clients.rend(); ++it) {
-			if (it->isDisconect()) {
-				quit_client(it->getFd());
+		for (std::vector<int>::iterator it = to_del.begin(); it != to_del.end(); ++it) {
+			quit_client(*it);
+		}
+
+		{
+			std::vector<channel_iter> to_del;
+
+			for (channel_iter it = channels.begin(); it != channels.end(); ++it) {
+				if (it->second.isDelete()) {
+					to_del.push_back(it);
+				}
+			}
+			for (std::vector<channel_iter>::iterator it = to_del.begin(); it != to_del.end(); ++it) {
+				channels.erase(*it);
 			}
 		}
+
 	}
 
 	ListenSocket::~ListenSocket() {}
@@ -288,15 +306,15 @@ namespace IRC {
 
 	void ListenSocket::quit_client(int fd) {
 		client_iter cl = getClient(fd);
-		for (std::list<std::string>::iterator it = cl->getChannels().begin();
-			 it != cl->getChannels().end(); ++it) {
+		Command quit(cl->get_full_name(), CMD_QUIT, cl->getQuitMsg());
+		for (std::list<std::string>::iterator it = cl->getChannels().begin(); it != cl->getChannels().end(); ++it) {
 			channels[*it].erase_client(*cl); //удаляем из всех групп
-			Command quit(cl->get_full_name(), CMD_QUIT, cl->getNick());
 			for (channel_client_iter itc = channels[*it].users.begin();
 				 itc != channels[*it].users.end(); ++itc) {
 				this->send_command(quit, (*itc)->getFd());
 			}
 		}
+		this->send_command(quit, fd);
 		std::cout << "[DEBUG]: " << cl->get_full_name() << " (" << fd << ") quit" << std::endl;
 		clients.erase(cl);
 		close(fd); // bye!
@@ -458,6 +476,10 @@ namespace IRC {
 		return chan != channels.end();
 	}
 
+	bool ListenSocket::isChannelExist(channel_const_iter const &chan) const {
+		return chan != channels.end();
+	}
+
 	void ListenSocket::addNewChannel(const std::string &chan) {
 		if (!isChannelExist(chan)) {
 			channels.insert(std::make_pair(chan, Channel(chan)));
@@ -465,6 +487,10 @@ namespace IRC {
 	}
 
 	channel_iter ListenSocket::getChannel(const std::string &chan) {
+		return channels.find(chan);
+	}
+
+	channel_const_iter ListenSocket::getChannel(const std::string &chan) const {
 		return channels.find(chan);
 	}
 

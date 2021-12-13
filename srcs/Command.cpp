@@ -146,7 +146,7 @@ IRC::Command::Command(std::string const& message): valid(true) {
 			return;
 		} else if (client.isFlag(UMODE_REGISTERED) && it == commands.end()) {
 			sendError(client, server, ERR_UNKNOWNCOMMAND, command);
-		} if (!(client.isFlag(UMODE_REGISTERED)) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER)) {
+		} else if (!(client.isFlag(UMODE_REGISTERED)) && (it->first == CMD_PASS || it->first == CMD_NICK || it->first == CMD_USER)) {
 			it->second(*this, client, server);
 		} else if (!(client.isFlag(UMODE_REGISTERED)) && it != commands.end()) {
 			sendError(client, server, ERR_NOTREGISTERED);

@@ -32,38 +32,22 @@ namespace IRC {
 			}
 
 			Channel &chan = server.getChannel(chans[i])->second;
-			std::string const &key = chan.getKey();
-
-			if (!key.empty() && keys[i] != key) {
-				sendError(client, server, ERR_BADCHANNELKEY, chans[i]);
-				continue;
-			}
-			if (chan.isFlag(CMODE_INVITE)) {
-				sendError(client, server, ERR_INVITEONLYCHAN, chans[i]);
-				continue;
-			}
-			if (!chan.check_limit()) {
-				sendError(client, server, ERR_CHANNELISFULL, chans[i]);
-				continue;
-			}
-
-			Command join(client.get_full_name(), CMD_JOIN, chans[i]);
-			server.send_command(join, client);
-			for (channel_ov_iter it = chan.opers.begin(); it != chan.opers.end(); ++it) {
-				server.send_command(join, **it);
-			}
 
 			if (!check_join_chan(client, server, chan, keys[i])) { continue; }
 			chan.add_memeber(client);
 			client.addChannel(chans[i]);
 
+			Command join(client.get_full_name(), CMD_JOIN, chans[i]);
+			for (channel_client_iter it = chan.users.begin(); it != chan.users.end(); ++it) {
+				server.send_command(join, **it);
+			}
+
 			if (!chan.getTopic().empty()) {
 				sendReply(client, server, RPL_TOPIC, chans[i], chan.getTopic());
-				// TODO: TOPICWHOTIME 333
 			}
 			sendReply(client, server, RPL_NAMREPLY, chan.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], chan.get_names());
 			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
-			//проверка на невидимость при отправке инфы вновь прибывшему
+			//проверка на невидимость при отправке инфы вновь прибывшему //TODO: НАХУЯ?
 		}
 	}
 
@@ -72,10 +56,15 @@ namespace IRC {
 		if (!check_params(client, server, params, CMD_PART)) { return; }
 
 		std::vector<std::string> chans = split(params[0], ',');
-		size_t len = chans.size();
-		for (int i = 0; i < len; ++i) {
+		for (int i = 0; i < chans.size(); ++i) {
 			Channel *channel = check_channel(chans[i], server, client, 1);
 			if (channel == NULL) { continue; }
+
+			Command part(client.get_full_name(), CMD_PART, chans[i]);
+			for (channel_client_iter it = channel->users.begin(); it != channel->users.end(); ++it) {
+				server.send_command(part, **it);
+			}
+
 			channel->erase_client(client);
 			client.eraseChannel(chans[i]);
 		}
@@ -170,7 +159,6 @@ namespace IRC {
 	}
 
 	void cmd_kick(Command const &cmd, Client &client, ListenSocket &server) {
-		//TODO: что то сделать с комментом надо
 		std::vector<std::string> const &params = cmd.getParams(); //параметры
 		if (!check_params(client, server, params, CMD_KICK, 2)) { return; }
 
@@ -194,7 +182,7 @@ namespace IRC {
 						}
 					}
 				}
-			} else//один канал один ник
+			} else //один канал один ник
 			{
 				Channel *channel = check_channel(chans[i], server, client, 1);
 				if (channel == NULL) { continue; }

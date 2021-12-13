@@ -7,7 +7,8 @@ namespace IRC {
 	Channel::Channel(std::string const &name) :
 			name(name),
 			flags(CMODE_NOEXT | CMODE_TOPIC),
-			limit(0) {}
+			limit(0),
+			to_delete(false) {}
 
 	bool Channel::check_name(std::string const &name) {
 		if (name[0] != '#')
@@ -33,22 +34,26 @@ namespace IRC {
 	}
 
 	std::string Channel::get_names() const {
+		std::string opers_ret;
+		std::string voiced_ret;
 		std::string ret;
 
-		for (std::set<std::string const *>::const_iterator it = opers.begin(); it != opers.end(); ++it) {
-			ret += '@' + **it + ' ';
-		}
-		for (std::set<std::string const *>::const_iterator it = voiced.begin(); it != voiced.end(); ++it) {
-			if (opers.find(*it) == opers.end())
-				ret += '+' + **it + ' ';
-		}
-		for (std::set<Client *>::const_iterator it = users.begin(); it != users.end(); ++it) {
-			if (opers.find(&(*it)->getNick()) == opers.end() && voiced.find(&(*it)->getNick()) == voiced.end()) {
-				if (!(*it)->isFlag(UMODE_INVIS)) { //если ник видимый
-					ret += (*it)->getNick() + ' ';
-				}
+		for (channel_client_iter it = users.begin(); it != users.end(); ++it) {
+			if ((*it)->isFlag(UMODE_INVIS)) {
+				// не трогаем невидимых
+				continue;
+			} else if (isOper(it)) {
+				// если опер
+				opers_ret += '@' + (*it)->getNick() + ' ';
+			} else if (isVoiced(it)) {
+				// если не опер, но есть право голоса
+				voiced_ret += '+' + (*it)->getNick() + ' ';
+			} else {
+				// если простой смертный
+				ret += (*it)->getNick() + ' ';
 			}
 		}
+		ret = opers_ret + voiced_ret + ret;
 		if (!ret.empty()) {
 			ret.erase(ret.end() - 1);
 		}
@@ -69,24 +74,29 @@ namespace IRC {
 		voiced.erase(&cl.getNick());
 		opers.erase(&cl.getNick());
 		users.erase(&cl);
+		if (users.empty()) {
+			to_delete = true;
+		}
 	}
 
-	bool Channel::isClient(Client const &client) const {
-		return users.find(const_cast<Client *>(&client)) != users.end();
-	};
+	bool Channel::isDelete() { return to_delete; }
 
+	bool Channel::isClient(Client const &client) const { return users.find(const_cast<Client *>(&client)) != users.end(); };
 	bool Channel::isClient(client_iter const &client) const { return users.find(&(*client)) != users.end(); };
 
 	bool Channel::isOper(Client const &client) const { return opers.find(&client.getNick()) != opers.end(); };
-
 	bool Channel::isOper(client_iter const &client) const { return opers.find(&client->getNick()) != opers.end(); };
+	bool Channel::isOper(channel_client_iter const &client) const { return opers.find(&(*client)->getNick()) != opers.end(); };
+	bool Channel::isOper(std::string const &nick) const { return opers.find(&nick) != opers.end(); };
 
 	bool Channel::isVoiced(Client const &client) const { return voiced.find(&client.getNick()) != voiced.end(); };
-
 	bool Channel::isVoiced(client_iter const &client) const { return voiced.find(&client->getNick()) != voiced.end(); };
+	bool Channel::isVoiced(channel_client_iter const &client) const { return voiced.find(&(*client)->getNick()) != voiced.end(); };
+	bool Channel::isVoiced(std::string const &nick) const { return voiced.find(&nick) != voiced.end(); };
 
-	Channel::Channel() :
+	Channel::Channel():
 			flags(CMODE_NOEXT | CMODE_TOPIC),
-			limit(0) {}
+			limit(0),
+			to_delete(false) {}
 
 }

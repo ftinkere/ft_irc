@@ -43,7 +43,7 @@ namespace IRC {
 	void mode_table_nicks(Client *oclient, Client const &client, ListenSocket &server);
 	void mode_flags_nick(Client *oclient, int flag, int const &sign);
 	std::list<Client>::iterator check_mask_nick(int flag, std::string const &nick, Client &client, ListenSocket &server);
-
+	void send_command_to_sharing_channel(Command const& cmd, Client const &client, ListenSocket const& server);
 
 	void cmd_pass(Command const &cmd, Client &client, ListenSocket &server);
 	void cmd_nick(Command const &cmd, Client &client, ListenSocket &server);

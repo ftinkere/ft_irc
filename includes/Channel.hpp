@@ -40,6 +40,8 @@ namespace IRC {
 		std::string	password;
 		int			limit;
 
+		bool to_delete;
+
 	public:
 
 		std::set<Client *>				users;
@@ -97,6 +99,16 @@ namespace IRC {
 		};
 
 		static std::map<const char, enum model> modes;
+
+		bool isOper(const std::string &nick) const;
+
+		bool isOper(const channel_client_iter &client) const;
+
+		bool isVoiced(const channel_client_iter &client) const;
+
+		bool isVoiced(const std::string &nick) const;
+
+		bool isDelete();
 	};
 }
 

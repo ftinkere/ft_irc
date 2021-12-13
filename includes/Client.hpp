@@ -32,6 +32,7 @@ namespace IRC {
 		std::string host;
         std::string mask;
 		bool to_disconnect;
+		std::string quit_msg;
 		time_t register_time;
 		time_t last_pingpong;
 		bool pinged;
@@ -54,7 +55,11 @@ namespace IRC {
 		int isFlag(int flag) const { return flags & flag; }
 
 		void disconnect() { this->to_disconnect = true; }
+		void disconnect(std::string const& quitMsg) { this->to_disconnect = true; this->quit_msg = quitMsg; }
 		const bool isDisconect() { return to_disconnect; }
+
+		const std::string &getQuitMsg() const { return quit_msg; };
+		void setQuitMsg(const std::string &quitMsg) { this->quit_msg = quitMsg; };
 
 		const std::string &getHost() const { return host; }
 		void setHost(const std::string &host) { this->host = host; }
@@ -92,6 +97,7 @@ namespace IRC {
 		void unsetPinged() { this->pinged = false; };
 
 		std::list<std::string> &getChannels() { return channels; }
+		const std::list<std::string> &getChannels() const { return channels; }
 		void addChannel(std::string const& flag) { channels.push_back(flag); }
 		void eraseChannel(std::string const& flag);
 

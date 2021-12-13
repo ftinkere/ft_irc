@@ -3,6 +3,7 @@
 //
 
 #include "commands.hpp"
+#include "Parser.hpp"
 #include <Reply.hpp>
 #include <algorithm>
 #include <sstream>
@@ -11,6 +12,7 @@ namespace IRC {
 
 	void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {
 		//добавить выводи режимов на экран
+		// TODO: полноценный парсинг сложных модов (-bl+i)
 		std::vector<std::string> const &params = cmd.getParams();//параметры
 
 		if (params.empty()) {
@@ -81,6 +83,12 @@ namespace IRC {
 					break;
 				}
 			}
+			std::string param = res == Channel::K ? "***" : (params.size() > 2 ? params[1] : "");
+			Command mode(client.get_full_name(), CMD_MODE, params[0], params[1], param);
+			for (channel_client_iter it = channel->users.begin(); it != channel->users.end(); ++it) {
+				server.send_command(mode, **it);
+			}
+
 		} else {
 			int flag = 0;
 			if (params.size() == 1)
@@ -122,6 +130,11 @@ namespace IRC {
 					} else
 						oclient->zeroFlag(UMODE_OPER);
 				}
+				Command mode(client.get_full_name(), CMD_MODE, params[0], params[1]);
+				server.send_command(mode, *oclient);
+				if (oclient->getNick() != client.getNick()) {
+					server.send_command(mode, client);
+				}
 			} else {
 				sendError(client, server, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
 				return;
@@ -152,12 +165,11 @@ namespace IRC {
 	}
 
 	void cmd_kill(Command const &cmd, Client &client, ListenSocket &server) {
-		//TODO: что то сделать с комментом надо
 		std::vector<std::string> const &params = cmd.getParams();//параметры
 		std::vector<std::string> pass;
 
 		if (params.empty() || params.size() != 2) {
-			sendError(client, server, ERR_NEEDMOREPARAMS, "KILL");
+			sendError(client, server, ERR_NEEDMOREPARAMS, CMD_KILL);
 			return;
 		}
 
@@ -165,11 +177,13 @@ namespace IRC {
 			sendError(client, server, ERR_NOPRIVILEGES);
 			return;
 		}
-		client_iter it = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
-		if (it == server.clients.end()) {
+//		client_iter it = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
+		client_iter it = server.getClient(params[0]);
+		if (!server.isClientExist(it)) {
 			sendError(client, server, ERR_NOSUCHNICK, params[0]);
 			return;
 		}
-		it->disconnect();
+		server.send_command(Command(client.get_full_name(), CMD_KILL, params[0], params[1]), client);
+		it->disconnect("Killed (" + client.getNick() + " (" + params[1] + "))");
 	}
 }// namespace IRC

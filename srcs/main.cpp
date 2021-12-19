@@ -1,5 +1,7 @@
 #include "ListenSocket.hpp"
 
+// TODO: there is a Makefile, the project compiles correctly, is written in C++, the binary file is called ircserv
+
 #define PORT "6667"   // порт, который мы слушаем
 
 int main(int argc, char *argv[])

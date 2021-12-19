@@ -28,7 +28,7 @@ namespace IRC
             void setup_listen(void);
         public:
             Socket(const char* port);
-            virtual ~Socket() {};
+            virtual ~Socket();
 
 //            int &getFdmax();
 //            fd_set &getMaster();

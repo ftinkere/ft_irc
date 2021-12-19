@@ -7,6 +7,7 @@
 #include <fstream>
 #include <set>
 #include <sstream>
+#include <csignal>
 
 namespace IRC {
 
@@ -70,22 +71,46 @@ namespace IRC {
 		//frfgrg
 	}
 
+	bool is_work = true;
+
+	void termination_handler (int signum) {
+		(void)signum;
+		is_work = false;
+	}
+
 	void ListenSocket::execute() {
 //        std::cout<<fd_max << std::endl;
 //        this->fd_max = Socket::fd_max;
 //        this->master = Socket::master;
 //        base = new SUBD();
-		while (true) {
+		signal(SIGINT, termination_handler);
+		signal(SIGTERM, termination_handler);
+		while (is_work) {
 			read_fds = master; // копируем его
 			struct timeval timeout = {
 					.tv_sec = 1,
 					.tv_usec = 0
 			};
-			if (select(fd_max + 1, &read_fds, NULL, NULL, &timeout) == -1) {
+			struct timespec timeout_p = {
+					.tv_sec = 1,
+					.tv_nsec = 0
+			};
+			sigset_t sigs;
+			sigemptyset(&sigs);
+			sigaddset(&sigs, SIGINT);
+			sigaddset(&sigs, SIGTERM);
+			if (pselect(fd_max + 1, &read_fds, NULL, NULL, &timeout_p, &sigs) == -1) {
+				std::cout << "Select error " << errno << ": " << strerror(errno) << std::endl;
+				is_work = false;
 				throw std::runtime_error("Select error");
+			} else {
+				check_connections();
 			}
-			check_connections();
+//			break;
 		}
+		std::cout << "Server quit" << std::endl;
+		signal(SIGINT, SIG_DFL);
+		signal(SIGTERM, SIG_DFL);
 	}
 
 	void ListenSocket::configure(std::string const &path) {
@@ -144,7 +169,6 @@ namespace IRC {
 			char node[NI_MAXHOST];
 			memset(node, 0, NI_MAXHOST);
 			int res = getnameinfo(reinterpret_cast<const sockaddr *>(&sa), sizeof(sa), node, sizeof(node), NULL, 0, 0);
-			// TODO: errs
 
 			if (res == 0) {
 				this->clients.back().setHost(node);
@@ -298,7 +322,11 @@ namespace IRC {
 
 	}
 
-	ListenSocket::~ListenSocket() {}
+	ListenSocket::~ListenSocket() {
+		for (client_reverse_iter it = clients.rbegin(); it != clients.rend(); ++it) {
+			close(it->getFd());
+		}
+	}
 
 	void ListenSocket::set_password(const std::string &password) {
 		this->password = password;

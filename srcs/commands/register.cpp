@@ -7,10 +7,6 @@
 #include <Reply.hpp>
 #include <algorithm>
 
-//TODO: прописать ответ на выполненые задачи для сервера — отправлять сами сообщения если нужно
-//TODO: сделать ответы клиентам при выполнении команд — чем это отличается от выше?
-//TODO: разобраться с комментами — так отправляются другим людям с командами
-
 namespace IRC {
 
 	class Channel;
@@ -49,7 +45,6 @@ namespace IRC {
 
 	void cmd_user(Command const &cmd, Client &client, ListenSocket &server) {
 		// check user
-		//TODO: обработать второй аргумент — НАХУЯ? Просто игнор
 		std::vector<std::string> const &params = cmd.getParams();
 		if (params.empty() || params.size() < 4) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, CMD_USER);

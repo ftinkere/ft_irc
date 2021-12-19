@@ -12,7 +12,6 @@ namespace IRC {
 
 	void cmd_mode(Command const &cmd, Client &client, ListenSocket &server) {
 		//добавить выводи режимов на экран
-		// TODO: полноценный парсинг сложных модов (-bl+i)
 		std::vector<std::string> const &params = cmd.getParams();//параметры
 
 		if (params.empty()) {
@@ -83,8 +82,11 @@ namespace IRC {
 					break;
 				}
 			}
-			std::string param = res == Channel::K ? "***" : (params.size() > 2 ? params[1] : "");
-			Command mode(client.get_full_name(), CMD_MODE, params[0], params[1], param);
+			std::string param1 = (res == Channel::K) ? "***" : "";
+			std::stringstream ss;
+			ss << channel->getLimit();
+			std::string param2 = (res == Channel::L) ? ss.str() : "";
+			Command mode(client.get_full_name(), CMD_MODE, params[0], params[1], param1, param2);
 			for (channel_client_iter it = channel->users.begin(); it != channel->users.end(); ++it) {
 				server.send_command(mode, **it);
 			}
@@ -125,19 +127,19 @@ namespace IRC {
 					mode_flags_nick(oclient, UMODE_WALLOPS, sign);
 				else if (mod == 'o'){
 					if (sign == '+') {
-						sendError(client, server, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
+						sendError(client, server, ERR_USERSDONTMATCH); //если не опер то не можешь редактировать чужой ник
 						return;
 					} else
 						oclient->zeroFlag(UMODE_OPER);
 				}
-				Command mode(client.get_full_name(), CMD_MODE, params[0], params[1]);
-				server.send_command(mode, *oclient);
-				if (oclient->getNick() != client.getNick()) {
-					server.send_command(mode, client);
-				}
 			} else {
 				sendError(client, server, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
 				return;
+			}
+			Command mode(client.get_full_name(), CMD_MODE, params[0], params[1]);
+			server.send_command(mode, *oclient);
+			if (oclient->getNick() != client.getNick()) {
+				server.send_command(mode, client);
 			}
 		}
 	}
@@ -178,7 +180,11 @@ namespace IRC {
 			return;
 		}
 //		client_iter it = check_mask_nick(ERR_CANTKILLSERVER, params[0], client, server);
-		client_iter it = server.getClient(params[0]);
+		client_iter it;
+		if (params[0].find('@') != std::string::npos)
+			it = server.getClientByMask(params[0]);
+		else
+			it = server.getClient(params[0]);
 		if (!server.isClientExist(it)) {
 			sendError(client, server, ERR_NOSUCHNICK, params[0]);
 			return;

@@ -63,7 +63,7 @@ namespace IRC {
 		std::vector<std::string> params = cmd.getParams(); //параметры
 
 		if (params.empty())
-			params[0] = server.getServername();
+			params.push_back(server.getServername());
 		if (params[0] != server.getServername()) {
 			sendError(client, server, ERR_NOSUCHSERVER, params[0]);
 			return;
@@ -84,8 +84,12 @@ namespace IRC {
 		std::vector<std::string> nicks = split(params[0], ',');
 		for (int i = 0; i < nicks.size(); ++i) {
 			std::string nick = nicks[i];
-			to = check_mask_nick(RPL_WHOISSERVER, params[0], client, server);
-			if (to == server.clients.end()) {
+//			to = check_mask_nick(RPL_WHOISSERVER, params[0], client, server);
+			if (nick.find('@') != std::string::npos)
+				to = server.getClientByMask(params[0]);
+			else
+				to = server.getClient(params[0]);
+			if (!server.isClientExist(to)) {
 				sendError(client, server, ERR_NOSUCHNICK, nick);
 				continue;
 			}

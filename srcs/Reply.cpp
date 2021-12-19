@@ -207,7 +207,7 @@ namespace IRC {
 				cmd << "You have been marked as being away";
 				break;
 			case RPL_WHOISUSER:
-				cmd << arg1 << arg2 << arg3 << "*" << arg4;
+				cmd << arg1 << arg2 << arg3 << arg4;
 				break;
 			case RPL_WHOISSERVER:
 				cmd << arg1 << arg2 << arg3;
@@ -225,7 +225,7 @@ namespace IRC {
 				cmd << arg1 << arg2;
 				break;
 			case RPL_WHOWASUSER:
-				cmd << arg1 << arg2 << arg3 << "*" << arg4;
+				cmd << arg1 << arg2 << arg3 << arg4;
 				break;
 			case RPL_ENDOFWHOWAS:
 				cmd << arg1 << "End of WHOWAS";
@@ -241,6 +241,10 @@ namespace IRC {
 				break;
 			case RPL_CHANNELMODEIS:
 				cmd << arg1 << ("+" + arg2);
+				if (!arg3.empty())
+					cmd << arg3;
+				if (!arg4.empty())
+					cmd << arg4;
 				break;
 			case RPL_NOTOPIC:
 				cmd << arg1 << "No topic is set";

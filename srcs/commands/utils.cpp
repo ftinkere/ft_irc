@@ -5,6 +5,7 @@
 #include "commands.hpp"
 #include <Reply.hpp>
 #include <algorithm>
+#include <sstream>
 
 class ListenSocket;
 namespace IRC {
@@ -127,41 +128,34 @@ namespace IRC {
 		std::string res;
 		if (channel->isFlag(CMODE_INVITE))
 		{
-			res.push_back(' ');
 			res.push_back(INVIT);
 		}
 		if (channel->isFlag(CMODE_MODER))
 		{
-			res.push_back(' ');
 			res.push_back(MODES);
 		}
 		if (channel->isFlag(CMODE_SECRET))
 		{
-			res.push_back(' ');
 			res.push_back(SECRET);
 		}
 		if (channel->isFlag(CMODE_NOEXT))
 		{
-			res.push_back(' ');
 			res.push_back(SPEAK);
 		}
 		if (channel->isFlag(CMODE_TOPIC)){
-			res.push_back(' ');
 			res.push_back(TOPIC);
 		}
-		if (!channel->getKey().empty()){
-			res.push_back(' ');
+		if (!channel->getKey().empty()) {
 			res.push_back(KEY);
-			res.push_back('=');
-			res += channel->getKey();
 		}
 		if (channel->getLimit() > 0){
-			res.push_back(' ');
 			res.push_back(LEN);
-			res.push_back('=');
-			res += std::to_string(channel->getLimit());
 		}
-		sendReply(client, server,  RPL_CHANNELMODEIS, chani, res);
+		std::stringstream ss;
+		ss << channel->getLimit();
+		sendReply(client, server,  RPL_CHANNELMODEIS, chani, res,
+				  channel->getKey().empty() ? "" : "***",
+				  channel->getLimit() > 0 ? ss.str() : "");
 	}
 
 	void mode_flags(Channel *channel, int flag, int const &sign)
@@ -258,13 +252,13 @@ namespace IRC {
 	void mode_table_nicks(Client *oclient, Client const &client, ListenSocket &server)
 	//посмотреть сетку модов ника
 	{
-		std::string res = "r";
+		std::string res = "+r";
 		if (oclient->isFlag(UMODE_OPER))
-			res += " o";
+			res += "o";
 		if (oclient->isFlag(UMODE_INVIS))
-			res += " i";
+			res += "i";
 		if (oclient->isFlag(UMODE_WALLOPS))
-			res += " w";
+			res += "w";
 		sendReply(client, server,  RPL_UMODEIS, res);
 	}
 
@@ -285,7 +279,7 @@ namespace IRC {
 			sendError(client, server, flag);
 			return server.clients.end();
 		}
-		else if(flag == RPL_WHOISSERVER){
+		else if (flag == RPL_WHOISSERVER){
 			sendReply(client, server,  flag, nick, server.getServername(), "Вот такой вот сервер");
 			sendReply(client, server,  RPL_ENDOFWHOIS, nick);
 			return server.clients.end();

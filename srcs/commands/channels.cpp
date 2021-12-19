@@ -37,9 +37,11 @@ namespace IRC {
 			chan.add_memeber(client);
 			client.addChannel(chans[i]);
 
-			Command join(client.get_full_name(), CMD_JOIN, chans[i]);
-			for (channel_client_iter it = chan.users.begin(); it != chan.users.end(); ++it) {
-				server.send_command(join, **it);
+			if (!client.isFlag(UMODE_INVIS)) {
+				Command join(client.get_full_name(), CMD_JOIN, chans[i]);
+				for (channel_client_iter it = chan.users.begin(); it != chan.users.end(); ++it) {
+					server.send_command(join, **it);
+				}
 			}
 
 			if (!chan.getTopic().empty()) {
@@ -47,7 +49,6 @@ namespace IRC {
 			}
 			sendReply(client, server, RPL_NAMREPLY, chan.isFlag(CMODE_SECRET) ? "@" : "=", chans[i], chan.get_names());
 			sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
-			//проверка на невидимость при отправке инфы вновь прибывшему //TODO: НАХУЯ?
 		}
 	}
 

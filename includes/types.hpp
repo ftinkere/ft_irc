@@ -17,6 +17,7 @@ namespace IRC {
 	class ListenSocket;
 	typedef void (*cmd)(Command const &, Client &, ListenSocket &);
 	typedef std::list<Client>::iterator client_iter;
+	typedef std::list<Client>::reverse_iterator client_reverse_iter;
 	typedef std::list<Client>::const_iterator client_const_iter;
 	typedef std::map<std::string, Channel>::iterator channel_iter;
 	typedef std::map<std::string, Channel>::const_iterator channel_const_iter;

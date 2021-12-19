@@ -65,7 +65,7 @@ namespace IRC {
 		void setHost(const std::string &host) { this->host = host; }
 
 		const std::string &getNick() const { return nick; }
-		void setNick(const std::string &nick) { this->nick = nick; }
+		void setNick(const std::string &nick) { this->nick = nick; setMask(); }
 
 		const std::string &getRealname() const { return realname; }
 		void setRealname(const std::string &realname) { this->realname = realname; }

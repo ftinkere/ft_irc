@@ -146,10 +146,10 @@ namespace IRC {
 		msg = choose_str(params, len, 0);
 		client_iter to = server.clients.begin();
 		for (; to != server.clients.end(); ++to) {//отправляем
-			Command cmd(client.get_full_name(), CMD_WALLOPS);
 			if (to->isFlag(UMODE_WALLOPS)) {
-				cmd << to->getNick() << msg;
-				server.send_command(cmd, to->getFd());
+				Command wallops(client.get_full_name(), CMD_WALLOPS);
+				wallops << to->getNick() << msg;
+				server.send_command(wallops, to->getFd());
 			}
 		}
 	}

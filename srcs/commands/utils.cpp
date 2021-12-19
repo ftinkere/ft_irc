@@ -12,7 +12,7 @@ namespace IRC {
 
 	int check_num(const char *str) {
 		//"Функция проверки числа"
-		for (int i = 0; i < strlen(str); ++i) {
+		for (size_t i = 0; i < strlen(str); ++i) {
 			if (!std::isdigit(str[i]))
 				return false;
 		}
@@ -20,7 +20,7 @@ namespace IRC {
 		return res;
 	}
 
-	std::string choose_str(std::vector<std::string> const &params, size_t len, int j) {
+	std::string choose_str(std::vector<std::string> const &params, size_t len, size_t j) {
 		//"Функция сборки последних параметров для отправки"
 		std::string msg;
 		for (; j < len; ++j) {//собираем параметры для отправки
@@ -232,6 +232,7 @@ namespace IRC {
 	bool mode_flags_limit(Channel *channel, Client const &client, ListenSocket &server, int const &sign, size_t const &len, std::string const &nick, std::string const &chan)
 	//добавляем в базу лимита
 	{
+		(void)chan;
 		if (len < 3) {
 			sendError(client, server, ERR_NEEDMOREPARAMS, "MODE");
 			return false;

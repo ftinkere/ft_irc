@@ -77,7 +77,7 @@ IRC::Command::Command(std::string const& message): valid(true) {
 		}
 
 		std::cout << "\t params: [";
-		for (int i = 0; !params.empty() && i < params.size() - 1; ++i) {
+		for (size_t i = 0; !params.empty() && i < params.size() - 1; ++i) {
 			std::cout << " " << params[i];
 		}
 		if (!params.empty()) {
@@ -123,7 +123,7 @@ IRC::Command::Command(std::string const& message): valid(true) {
 
 		message += getCommand();
 
-		for (int i = 0; i < getParams().size(); ++i) {
+		for (size_t i = 0; i < getParams().size(); ++i) {
 			if (i == getParams().size() - 1) {
 				message += " :" + getParams()[i] + "\r\n";
 			} else {

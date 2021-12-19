@@ -56,7 +56,7 @@ namespace IRC {
 
 		void disconnect() { this->to_disconnect = true; }
 		void disconnect(std::string const& quitMsg) { this->to_disconnect = true; this->quit_msg = quitMsg; }
-		const bool isDisconect() { return to_disconnect; }
+		bool isDisconect() { return to_disconnect; }
 
 		const std::string &getQuitMsg() const { return quit_msg; };
 		void setQuitMsg(const std::string &quitMsg) { this->quit_msg = quitMsg; };
@@ -86,13 +86,13 @@ namespace IRC {
 		const std::string &getAway() const { return away; }
 		void clearAway() { this->away.clear(); }
 
-		const time_t getRegisterTime() const { return register_time; }
+		time_t getRegisterTime() const { return register_time; }
 		void touchRegisterTime() { this->register_time = time(NULL); }
 
-		const time_t getPingpongTime() const { return last_pingpong; }
+		time_t getPingpongTime() const { return last_pingpong; }
 		void touchPingpongTime() { this->last_pingpong = time(NULL); }
 
-		const bool isPinged() { return pinged; };
+		bool isPinged() { return pinged; };
 		void setPinged() { this->pinged = true; };
 		void unsetPinged() { this->pinged = false; };
 

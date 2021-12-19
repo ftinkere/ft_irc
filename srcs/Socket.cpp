@@ -3,8 +3,7 @@
 
 namespace IRC {
 	Socket::Socket(const char *port) {
-		int rv;
-		struct addrinfo hints, *ai, *bindp;
+		struct addrinfo hints, *ai, bindp;
 
 		FD_ZERO(&master); //очищаем сет
 		// получаем сокет и биндим его
@@ -15,7 +14,7 @@ namespace IRC {
 		if ((getaddrinfo(NULL, port, &hints, &ai)) != 0) {
 			throw std::runtime_error("Selected server: getaddrinfo\n");
 		}
-		socket_bind(1, ai, bindp);
+		socket_bind(1, ai, &bindp);
 		setup_listen();
 	}
 

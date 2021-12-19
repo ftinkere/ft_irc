@@ -1,5 +1,5 @@
-CLASSES = Channel Client Command ListenSocket Socket
-INTERFACES = types Reply Parser
+CLASSES = Channel Client Command ListenSocket Socket Reply
+INTERFACES = types Parser
 SOURCES_WS = $(addsuffix .cpp, $(CLASSES)) \
 	main.cpp commands/channels.cpp commands/messages.cpp commands/monitoring.cpp commands/oper.cpp commands/pingpong.cpp \
 	commands/register.cpp commands/utils.cpp

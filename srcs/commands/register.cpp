@@ -58,6 +58,7 @@ namespace IRC {
 	}
 
 	void cmd_quit(Command const &cmd, Client &client, ListenSocket &server) {
+		(void)server;
 		std::vector<std::string> const &params = cmd.getParams();
 
 		if (params.empty()) {

@@ -79,11 +79,7 @@ namespace IRC {
 		bool isClientExist(std::string const &nick) const;
 		bool isClientExist(client_iter const &it) const;
 
-		std::vector<Client *> find_clients(const std::string &nick, int flag, Client const &feedback);
-		std::vector<Client *> find_clients(const std::string &nick, Client const &feedback);
-
 		Client *thisisnick(const std::string &nick, int flag, Client &feedback);
-		Channel *thisischannel(const std::string &nick, int flag, Client &feedback);
 
 		void send_command(Command const &command, Client const &client) const;
 		void send_command(Command const &command, std::string const &nickname) const;

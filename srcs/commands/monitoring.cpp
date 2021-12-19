@@ -17,7 +17,7 @@ namespace IRC {
 		if (!params.empty()) {
 			std::vector<std::string> chans = split(params[0], ',');
 			size_t len = chans.size();
-			for (int i = 0; i < len; ++i) {
+			for (size_t i = 0; i < len; ++i) {
 				channel_iter it = server.getChannel(chans[i]);
 				if (!server.isChannelExist(it)) {
 					sendReply(client, server, RPL_ENDOFNAMES, chans[i]);
@@ -82,7 +82,7 @@ namespace IRC {
 			return;
 		}
 		std::vector<std::string> nicks = split(params[0], ',');
-		for (int i = 0; i < nicks.size(); ++i) {
+		for (size_t i = 0; i < nicks.size(); ++i) {
 			std::string nick = nicks[i];
 //			to = check_mask_nick(RPL_WHOISSERVER, params[0], client, server);
 			if (nick.find('@') != std::string::npos)
@@ -132,7 +132,7 @@ namespace IRC {
 		}
 		std::vector<std::string> nicks = split(params[0], ',');
 		size_t limit = 1;
-		for (int i = 0; i < nicks.size(); ++i) {
+		for (size_t i = 0; i < nicks.size(); ++i) {
 			std::string nick = nicks[i];
 			bool loop = false;
 			if (params.size() > 1)
@@ -142,7 +142,7 @@ namespace IRC {
 				limit = coun;
 			std::pair<std::multimap<std::string, Client>::iterator, std::multimap<std::string, Client>::iterator> range = server.base_client.equal_range(
 					nick);//находим список всех совпадений
-			int j = 0;
+			size_t j = 0;
 			for (std::multimap<std::string, Client>::iterator it = range.first;
 				 it != range.second && j < limit; ++it, ++j) {
 				sendReply(client, server, RPL_WHOWASUSER, nick, it->second.getUser(), it->second.getHost(),

@@ -18,7 +18,7 @@ namespace IRC {
 		std::vector<std::string> keys;
 		if (params.size() > 1)
 			keys = split(params[1], ',');
-		for (int i = 0; i < chans.size(); ++i) {
+		for (size_t i = 0; i < chans.size(); ++i) {
 			keys.push_back("");
 		}
 
@@ -57,7 +57,7 @@ namespace IRC {
 		if (!check_params(client, server, params, CMD_PART)) { return; }
 
 		std::vector<std::string> chans = split(params[0], ',');
-		for (int i = 0; i < chans.size(); ++i) {
+		for (size_t i = 0; i < chans.size(); ++i) {
 			Channel *channel = check_channel(chans[i], server, client, 1);
 			if (channel == NULL) { continue; }
 
@@ -113,7 +113,7 @@ namespace IRC {
 		if (!params.empty()) {
 			std::vector<std::string> chans = split(params[0], ',');
 			size_t len = chans.size();
-			for (int i = 0; i < len; ++i) {
+			for (size_t i = 0; i < len; ++i) {
 				channel_iter it = server.getChannel(chans[i]);
 				if (!server.isChannelExist(it))
 					continue;
@@ -168,13 +168,13 @@ namespace IRC {
 		std::vector<std::string> chans = split(params[0], ',');
 		std::vector<std::string> nicks = split(params[1], ',');
 		size_t len = nicks.size();
-		for (int i = 0; i < chans.size(); ++i) {
+		for (size_t i = 0; i < chans.size(); ++i) {
 			if (chans.size() == 1) { //если один канал тогда любое количество ников
 				Channel *channel = check_channel(chans[0], server, client, 1);
 				if (channel == NULL) { return; }
 				if (!priv_need_channel(channel, client, server, chans[0])) { return; }
 
-				for (int j = 0; j < len; ++j) {
+				for (size_t j = 0; j < len; ++j) {
 					if (erase_member(channel, client, server, nicks[j], chans[0])) {
 						Command kick(client.get_full_name(), CMD_KICK, channel->getName(), nicks[j], comment);
 						server.send_command(kick, nicks[j]);

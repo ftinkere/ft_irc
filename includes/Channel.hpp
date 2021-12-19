@@ -38,7 +38,7 @@ namespace IRC {
 		int			flags;
 		std::string	topic;
 		std::string	password;
-		int			limit;
+		size_t		limit;
 
 		bool to_delete;
 
@@ -65,7 +65,7 @@ namespace IRC {
 		void setKey(std::string const& key) { password = key; }
 		void clearKey() { password.clear(); }
 
-		int const& getLimit() const { return limit; }
+		int getLimit() const { return limit; }
 		void setLimit(int const& key) { limit = key; }
 		void clearLimit() { limit = 0; }
 

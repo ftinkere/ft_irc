@@ -87,10 +87,6 @@ namespace IRC {
 		signal(SIGTERM, termination_handler);
 		while (is_work) {
 			read_fds = master; // копируем его
-			struct timeval timeout = {
-					.tv_sec = 1,
-					.tv_usec = 0
-			};
 			struct timespec timeout_p = {
 					.tv_sec = 1,
 					.tv_nsec = 0
@@ -145,9 +141,10 @@ namespace IRC {
 
 	void ListenSocket::new_client() {
 		char *ipv4;
-		struct sockaddr_storage remoteaddr = {0};
+		struct sockaddr_storage remoteaddr;
 		socklen_t addrlen = sizeof remoteaddr;
 
+		memset(&remoteaddr, 0, sizeof remoteaddr);
 		int fd_new = accept(listener,
 							reinterpret_cast<sockaddr *>(&remoteaddr),
 							&addrlen);
@@ -162,7 +159,8 @@ namespace IRC {
 			ipv4 = recieve_ip(remoteaddr);
 			this->clients.push_back(Client(fd_new));
 
-			struct sockaddr_in sa = {0};
+			struct sockaddr_in sa;
+			memset(&sa, 0, sizeof sa);
 			inet_pton(AF_INET, ipv4, &sa.sin_addr); // check
 			sa.sin_family = AF_INET;
 
@@ -360,84 +358,6 @@ namespace IRC {
 
 	const std::map<std::string, cmd> &ListenSocket::getCommands() const { return commands; }
 
-	std::vector<Client *> IRC::ListenSocket::find_clients(const std::string &nick, int flag, Client const &feedback) {
-		std::vector<Client *> ret;
-
-		if (nick[0] == '#') {
-			// find in channel
-			if (channels.find(nick) != channels.end()) {
-				Channel &chan = channels[nick];
-				if (chan.isFlag(CMODE_NOEXT) || chan.users.find(&const_cast<Client &>(feedback)) !=
-												chan.users.end()) { //если есть +n или клиент состоит в группе
-					if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
-						for (channel_client_iter it = chan.users.begin(); it != chan.users.end(); ++it) {
-//							Client *client = *it;
-							ret.push_back(*it);
-						}
-					} else if (flag != -1) {
-						sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
-					}
-				} else if (flag != -1) {
-					sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick, "");
-				}
-			} else if (flag != -1) {
-				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
-			}
-			//обработать +m
-		} else if (nick.size() > 2 && nick[0] == '@' && nick[1] == '#') {
-			// find opers in channel
-			std::string nick1 = nick.substr(1);
-			if (channels.find(nick1) != channels.end()) {
-				Channel &chan = channels[nick1];
-				if (chan.isFlag(CMODE_NOEXT) || (chan.users.find(&const_cast<Client &>(feedback)) != chan.users.end()))
-					//если есть +n или клиент состоит в группе
-				{
-					if (chan.isFlag(CMODE_MODER) || chan.voiced.find(&(feedback.getNick())) != chan.voiced.end()) {
-						channel_ov_iter it = chan.opers.begin();//берем всех оперов
-						for (; it != chan.opers.end(); ++it) {
-							client_iter to = getClient(**it);
-							ret.push_back(&(*to));
-						}
-					} else {
-						if (flag != -1)
-							sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick1, "");
-					}
-				} else {
-					if (flag != -1)
-						sendError(feedback, *this, ERR_CANNOTSENDTOCHAN, nick1, "");
-				}
-			} else if (flag != -1) {
-				sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick1, "");
-			}
-		} else {
-			// find nick
-			client_iter it;
-			if (nick == servername) {//если пишешь серверу
-				ret.push_back(NULL);
-				return ret;
-			}
-				//проверить маску
-			else if (nick.find('@') != std::string::npos) {
-				it = getClientByMask(nick);
-			} else
-				it = getClient(nick);
-			if (it == this->clients.end()) {
-				if (flag != -1) {
-					sendError(feedback, *this, ERR_NOSUCHNICK, nick, "");
-				}
-			} else {
-				ret.push_back(&(*it));
-			}
-		}
-		return ret;
-	}
-
-	std::vector<Client *> ListenSocket::find_clients(const std::string &nick, const Client &feedback) {
-//		std::vector<Client*> IRC::ListenSocket::find_clients(const std::string &nick, Client const& feedback) {
-//		std::vector<Client *> IRC::ListenSocket::find_clients(const std::string &nick, Client const &feedback) {
-		return find_clients(nick, 0, feedback);
-	}
-
 
 	Client *IRC::ListenSocket::thisisnick(const std::string &nick, int flag, Client &feedback) {
 		if (feedback.getNick() == nick)
@@ -459,15 +379,6 @@ namespace IRC {
 			sendError(feedback, *this, ERR_USERSDONTMATCH);//если не опер то не можешь редактировать чужой ник
 			return NULL;
 		}
-	}
-
-	Channel *IRC::ListenSocket::thisischannel(const std::string &nick, int flag, Client &feedback) {
-		channel_iter it = channels.find(nick);
-		if (it == channels.end()) {
-			sendError(feedback, *this, ERR_NOSUCHCHANNEL, nick, "");
-			return (NULL);
-		}
-		return &(it->second);
 	}
 
 	void ListenSocket::send_command(const Command &command, const Client &client) const {

@@ -43,8 +43,6 @@ namespace IRC {
 				}
 			}
 		} else if (params[0].size() > 1 && params[0][0] == '@' && params[0][1] == '#') {
-			std::string chan_s = params[0].substr(1);
-			Channel &chan = it->second;
 			for (channel_ov_iter op_it = it->second.opers.begin(); op_it != it->second.opers.end(); ++op_it) {
 				client_iter cl_it = server.getClient(**op_it);
 				if (cl_it->getFd() != client.getFd()) {
@@ -64,7 +62,7 @@ namespace IRC {
 
 		std::string msg = choose_str(params, len, 1);//собираем параметры для отправки
 
-		for (int i = 0; i < clients.size(); ++i) {//отправляем
+		for (size_t i = 0; i < clients.size(); ++i) {//отправляем
 			Command privmsg(client.get_full_name(), CMD_PRIVMSG, params[0]);
 			privmsg << msg;
 			server.send_command(privmsg, clients[i]);
@@ -110,7 +108,7 @@ namespace IRC {
 
 		std::string msg = choose_str(params, len, 1); //собираем параметры для отправки
 
-		for (int i = 0; i < clients.size(); ++i) { //отправляем
+		for (size_t i = 0; i < clients.size(); ++i) { //отправляем
 			Command notice(client.get_full_name(), CMD_NOTICE, params[0]);
 			notice << msg;
 			server.send_command(notice, clients[i]);

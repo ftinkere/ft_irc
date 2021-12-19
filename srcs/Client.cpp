@@ -57,24 +57,24 @@ bool IRC::Client::try_register(ListenSocket & server) {
 
 bool IRC::Client::_name_control(std::string const& prefix, int v)
 {
-    int i = 0;
+    size_t i = 0;
     bool sign = false;
 
     if (v == 1)
     {
-        for(int k = 0; k < prefix.length(); k++)
+        for (size_t k = 0; k < prefix.length(); k++)
         {
             if (!std::isalpha(prefix[k]))
                 return false;
         }
     }
-    else{
+    else {
         std::string spec = "-_[]\\^{}";
         while(prefix.length() > i)
         {
             if (!std::isalnum(prefix[i]))
             {
-                for (int j = 0; j < spec.length(); j++)
+                for (size_t j = 0; j < spec.length(); j++)
                 {
                     if (prefix[i] == spec[j])
                     {

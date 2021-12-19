@@ -25,7 +25,7 @@ namespace IRC {
 
 	//вспомогательные функции
 	int check_num(const char *str);
-	std::string choose_str(std::vector<std::string> const &params, size_t len, int j);
+	std::string choose_str(std::vector<std::string> const &params, size_t len, size_t j);
 	Channel* check_channel(std::string const &chan, ListenSocket &server, Client & client, int visible = 0);
 	bool priv_need_channel(Channel *channel, Client const &client, ListenSocket &server, std::string const& chani);
 	bool check_nick(std::list<Client>::iterator & it, Channel *channel, Client const &client, ListenSocket &server, std::string const &nick, const std::string & chani);

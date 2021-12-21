@@ -17,8 +17,10 @@ int main(int argc, char *argv[])
 		password = argv[2];
 	}
 
-	IRC::ListenSocket server(port.c_str());
-	server.configure("config.conf");
-	server.set_password(password);
-	server.execute();
+	try {
+		IRC::ListenSocket server(port.c_str());
+		server.configure("config.conf");
+		server.set_password(password);
+		server.execute();
+	} catch (...) {}
 }

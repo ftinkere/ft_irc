@@ -22,5 +22,7 @@ int main(int argc, char *argv[])
 		server.configure("config.conf");
 		server.set_password(password);
 		server.execute();
-	} catch (...) {}
+	} catch (std::exception &e) {
+		std::cerr << e.what() << std::endl;
+	}
 }

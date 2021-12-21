@@ -54,6 +54,7 @@ namespace IRC {
 						  std::string const &arg1 = "", std::string const &arg2 = "",
 						  std::string const &arg3 = "", std::string const &arg4 = "") const;
 		void send_command(Command const &command, int fd) const;
+		void quit_client(int fd);
 
 	public:
 		const static time_t registration_timeout = 60;
@@ -66,7 +67,6 @@ namespace IRC {
 		const std::string &getPassword() const;
 		const std::map<std::string, cmd> &getCommands() const;
 		const time_t &getCreationTime() const { return creation_time; }
-		void quit_client(int fd);
 
 		bool isChannelExist(std::string const &chan) const;
 		bool isChannelExist(channel_iter const &chan) const;

@@ -156,7 +156,7 @@ namespace IRC {
 				return;
 		}
 //		send(user.getFd(), msg.c_str(), msg.size(), 0);
-		server.send_command(cmd, user.getFd());
+		server.send_command(cmd, user);
 	}
 
 	void sendReply(const Client &user, ListenSocket const& server, int rpl,
@@ -451,6 +451,6 @@ namespace IRC {
 //				break;
 				return;
 		}
-		server.send_command(cmd, user.getFd());
+		server.send_command(cmd, user);
 	}
 }

@@ -97,8 +97,8 @@ namespace IRC {
 			sigaddset(&sigs, SIGTERM);
 			if (pselect(fd_max + 1, &read_fds, NULL, NULL, &timeout_p, &sigs) == -1) {
 				std::cout << "Select error " << errno << ": " << strerror(errno) << std::endl;
-				is_work = false;
-				throw std::runtime_error("Select error");
+//				is_work = false;
+//				throw std::runtime_error("Select error");
 			} else {
 				check_connections();
 			}
@@ -197,7 +197,7 @@ namespace IRC {
 				std::cerr << "Error recieve on fd " << fd << std::endl;
 				std::cerr << "\t" << errno << ": " << strerror(errno) << std::endl;
 			}
-			client->disconnect();
+			client->disconnect(0);
 		} else { // у нас есть какие-то данные от клиента
 
 			while ((bytesRead = recv(fd, buffer, BUFFER_SIZE - 1, 0)) > 0) {
@@ -306,14 +306,14 @@ namespace IRC {
 		}
 
 		{
-			std::vector<channel_iter> to_del;
+			std::vector<channel_iter> to_del_ch;
 
 			for (channel_iter it = channels.begin(); it != channels.end(); ++it) {
 				if (it->second.isDelete()) {
-					to_del.push_back(it);
+					to_del_ch.push_back(it);
 				}
 			}
-			for (std::vector<channel_iter>::iterator it = to_del.begin(); it != to_del.end(); ++it) {
+			for (std::vector<channel_iter>::iterator it = to_del_ch.begin(); it != to_del_ch.end(); ++it) {
 				channels.erase(*it);
 			}
 		}
@@ -326,8 +326,8 @@ namespace IRC {
 		}
 	}
 
-	void ListenSocket::set_password(const std::string &password) {
-		this->password = password;
+	void ListenSocket::set_password(const std::string &_password) {
+		this->password = _password;
 	}
 
 	void ListenSocket::quit_client(int fd) {
@@ -340,7 +340,8 @@ namespace IRC {
 				this->send_command(quit, (*itc)->getFd());
 			}
 		}
-		this->send_command(quit, fd);
+		if (cl->canSend())
+			this->send_command(quit, fd);
 		std::cout << "[DEBUG]: " << cl->get_full_name() << " (" << fd << ") quit" << std::endl;
 		clients.erase(cl);
 		close(fd); // bye!
@@ -382,12 +383,13 @@ namespace IRC {
 	}
 
 	void ListenSocket::send_command(const Command &command, const Client &client) const {
-		send_command(command, client.getFd());
+		if (client.canSend())
+			send_command(command, client.getFd());
 	}
 
 	void ListenSocket::send_command(const Command &command, const std::string &nickname) const {
 		client_const_iter to = getClient(nickname);
-		if (to != getClients().end()) {
+		if (to != getClients().end() && to->canSend()) {
 			send_command(command, to->getFd());
 		}
 	}
@@ -399,7 +401,8 @@ namespace IRC {
 
 	void ListenSocket::send_command(const Client &client, const std::string &cmd, const std::string &arg1,
 									const std::string &arg2, const std::string &arg3, const std::string &arg4) const {
-		send_command(Command(getServername(), cmd, arg1, arg2, arg3, arg4), client.getFd());
+		if (client.canSend())
+			send_command(Command(getServername(), cmd, arg1, arg2, arg3, arg4), client.getFd());
 	}
 
 	void ListenSocket::send_command(int fd, const std::string &cmd, const std::string &arg1,

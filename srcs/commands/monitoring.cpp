@@ -138,7 +138,7 @@ namespace IRC {
 			if (params.size() > 1)
 				limit = check_num(params[1].c_str());// если есть второй аргумент то это будет лимитом
 			size_t coun = server.base_client.count(nick); //количество элементов в мапе
-			if (limit < 0 || coun < limit)
+			if (coun < limit)
 				limit = coun;
 			std::pair<std::multimap<std::string, Client>::iterator, std::multimap<std::string, Client>::iterator> range = server.base_client.equal_range(
 					nick);//находим список всех совпадений

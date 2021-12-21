@@ -24,7 +24,7 @@ namespace IRC {
 
 		void execute();
 		void configure(std::string const &path);
-		void set_password(std::string const &password);
+		void set_password(std::string const &_password);
 
 
 		std::list<Client> clients;
@@ -49,6 +49,11 @@ namespace IRC {
 		void new_client();
 		void handle_chat(int const &fd);
 		int handle_message(const char *buf, Client *client);
+
+		void send_command(int fd, std::string const &cmd,
+						  std::string const &arg1 = "", std::string const &arg2 = "",
+						  std::string const &arg3 = "", std::string const &arg4 = "") const;
+		void send_command(Command const &command, int fd) const;
 
 	public:
 		const static time_t registration_timeout = 60;
@@ -83,11 +88,7 @@ namespace IRC {
 
 		void send_command(Command const &command, Client const &client) const;
 		void send_command(Command const &command, std::string const &nickname) const;
-		void send_command(Command const &command, int fd) const;
 		void send_command(Client const &client, std::string const &cmd,
-						  std::string const &arg1 = "", std::string const &arg2 = "",
-						  std::string const &arg3 = "", std::string const &arg4 = "") const;
-		void send_command(int fd, std::string const &cmd,
 						  std::string const &arg1 = "", std::string const &arg2 = "",
 						  std::string const &arg3 = "", std::string const &arg4 = "") const;
 

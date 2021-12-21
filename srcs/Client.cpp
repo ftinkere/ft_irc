@@ -29,7 +29,7 @@ bool IRC::Client::try_register(ListenSocket & server) {
 	} else if (!server.getPassword().empty() && this->pass != server.getPassword()) {
 		Command msg(server.getServername(), "ERROR");
 		msg << "Access denied. Incorrect password";
-		server.send_command(msg, this->fd);
+		server.send_command(msg, *this);
 		server.quit_client(this->fd);
 		return false;
 	}

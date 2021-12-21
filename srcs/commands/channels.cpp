@@ -99,7 +99,7 @@ namespace IRC {
 			}
 			channel->setTopic(msg);//устанавливаем топик
 		}
-		Command topic(client.get_full_name(), CMD_TOPIC);
+		Command topic(client.get_full_name(), CMD_TOPIC, chani);
 		topic << msg;
 		for (channel_client_iter it = channel->users.begin(); it != channel->users.end(); ++it) {
 			server.send_command(topic, **it);

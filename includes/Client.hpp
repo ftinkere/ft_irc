@@ -32,6 +32,7 @@ namespace IRC {
 		std::string host;
         std::string mask;
 		bool to_disconnect;
+		bool can_send;
 		std::string quit_msg;
 		time_t register_time;
 		time_t last_pingpong;
@@ -39,8 +40,8 @@ namespace IRC {
 
 	public:
 
-		Client() : fd(-1), flags(UMODE_WALLOPS), to_disconnect(false), pinged(false) {}
-		Client(int fd) : fd(fd), flags(UMODE_WALLOPS), to_disconnect(false), pinged(false) {}
+		Client() : fd(-1), flags(UMODE_WALLOPS), to_disconnect(false), can_send(true), pinged(false) {}
+		Client(int fd) : fd(fd), flags(UMODE_WALLOPS), to_disconnect(false), can_send(true), pinged(false) {}
 
 		virtual ~Client() {}
 
@@ -55,8 +56,10 @@ namespace IRC {
 		int isFlag(int flag) const { return flags & flag; }
 
 		void disconnect() { this->to_disconnect = true; }
+		void disconnect(int a) { (void)a; this->to_disconnect = true; can_send = false; }
 		void disconnect(std::string const& quitMsg) { this->to_disconnect = true; this->quit_msg = quitMsg; }
 		bool isDisconect() { return to_disconnect; }
+		bool canSend() const { return can_send; }
 
 		const std::string &getQuitMsg() const { return quit_msg; };
 		void setQuitMsg(const std::string &quitMsg) { this->quit_msg = quitMsg; };

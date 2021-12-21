@@ -30,7 +30,8 @@ bool IRC::Client::try_register(ListenSocket & server) {
 		Command msg(server.getServername(), "ERROR");
 		msg << "Access denied. Incorrect password";
 		server.send_command(msg, *this);
-		server.quit_client(this->fd);
+//		server.quit_client(this->fd);
+		this->disconnect(0);
 		return false;
 	}
 	setFlag(UMODE_REGISTERED);
